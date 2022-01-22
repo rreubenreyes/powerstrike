@@ -1,5 +1,4 @@
 # This is an example of StrongLifts 5x5 implemented in the Powerstrike language.
-
 defaults {
   exercise.unit = units.Kilogram
 }
