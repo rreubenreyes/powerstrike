@@ -1,0 +1,23 @@
+{
+  "name": "powerstrike.lang",
+  "version": "1.0.0",
+  "description": "markup and config language for strength training programs",
+  "main": "dist/index.js",
+  "dependencies": {
+    "bunyan": "^1.8.15",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/bunyan": "^1.8.8",
+    "@types/lodash": "^4.14.178",
+    "@typescript-eslint/eslint-plugin": "^2.34.0",
+    "@typescript-eslint/parser": "^4.33.0",
+    "jest": "^27.4.7",
+    "typescript": "^4.5.5"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "Reuben Reyes",
+  "license": "MIT"
+}
