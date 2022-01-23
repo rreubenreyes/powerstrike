@@ -1,4 +1,5 @@
 export const Time = {
+  Any: "any",
   Second: "second",
   Minute: "minute",
   Day: "day",
@@ -7,16 +8,16 @@ export const Time = {
   Year: "year",
 } as const
 
-export interface ExerciseDefinition {
+export interface ExerciseDef {
   name: string
-  kind: "simple" | "complex"
+  kind?: "simple" | "complex"
   sets?: number
   reps?: number
   weight?: number
   comment?: string
 }
 
-export interface Exercise {
+export interface CompleteExercise {
   name: string
   kind: "simple" | "complex"
   sets: number
@@ -25,23 +26,31 @@ export interface Exercise {
   comment?: string
 }
 
-export interface Template {
+export interface TemplateDef {
   inputs: string[]
   sessions: {
     key: string
-    exercises: ExerciseDefinition[]
+    exercises: ExerciseDef[]
   }[]
 }
 
-export interface FilledTemplate {
+export interface CompleteTemplate {
   sessions: {
     key: string
-    exercises: Exercise[]
+    exercises: CompleteExercise[]
   }[]
 }
 
 export interface Schedule {
   period: typeof Time[keyof typeof Time];
-  blocks: FilledTemplate[]
+  blocks: CompleteTemplate[]
 }
 
+export function createSchedule(opts: Partial<Schedule>): Schedule {
+  const {
+    period = Time.Any,
+    blocks = []
+  } = opts
+
+  return { period, blocks }
+}
