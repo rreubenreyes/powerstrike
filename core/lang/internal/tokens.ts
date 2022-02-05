@@ -10,7 +10,7 @@ export const keywords = {
   end: "end"
 }
 
-export const operators = {
+export const binaryOperators = {
   assign: "=",
   plus: "+",
   minus: "-",
@@ -30,7 +30,7 @@ export const punctuation = {
   rcbrace: "}",
 }
 
-export const expressions = {
+export const binaryExpressions = {
   eq: "==",
   gt: ">",
   lt: "<",
@@ -38,5 +38,3 @@ export const expressions = {
   lte: "<=",
   not: "not",
 }
-
-export const variableNameExpr = /^[a-zA-Z_]\w*$/

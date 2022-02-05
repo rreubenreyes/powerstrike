@@ -14,5 +14,7 @@ function define(name: string): typeof err {
   return err
 }
 
+export const ImplementationError = define("ImplementationError")
 export const InvalidContextPathError = define("InvalidContextPathError")
 export const UnexpectedTokenError = define("UnexpectedTokenError")
+export const UnexpectedEOF = define("UnexpectedEOF")

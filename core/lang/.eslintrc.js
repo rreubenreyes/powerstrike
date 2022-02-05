@@ -9,8 +9,8 @@ module.exports = {
   rules: {
     semi: [2, "never"],
     quotes: ["error", "double", { "allowTemplateLiterals": true }],
-    indent: ['error', 2, { SwitchCase: 1, VariableDeclarator: 1, MemberExpression: 'off' }],
-    '@typescript-eslint/indent': ['error', 2],
+    indent: ["error", 2, { "SwitchCase": 0 }],
+    '@typescript-eslint/indent': ['error', 2, { "SwitchCase": 0 }],
     "@typescript-eslint/explicit-function-return-type": "off"
   }
 };
