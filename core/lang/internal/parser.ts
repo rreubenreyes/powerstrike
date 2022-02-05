@@ -1,8 +1,21 @@
+import _ from "lodash"
+
 import * as typedef from "./typedef"
+import * as grammar from "./grammar"
 import * as stdlib from "./stdlib"
 import * as errors from "./errors"
+import logger from "./logger"
 
-const globalContext = {
+interface GlobalContext {
+  [key: string]: unknown;
+  defaults: {
+    exercise: {
+      unit: typeof stdlib.Units.Kilogram[keyof typeof stdlib.Units.Kilogram];
+    };
+  };
+}
+
+const globalContext: GlobalContext = {
   defaults: {
     exercise: {
       unit: stdlib.Units.Kilogram,
@@ -11,22 +24,34 @@ const globalContext = {
 }
 
 function setGlobalContext(path: string, value: unknown): void {
-  const parts = path.split('.')
-  let cur = globalContext
-  for (const part of parts) {
-    if (cur[part] === undefined) {
-      throw new errors.InvalidContextPathError(`invalid context path ${path}`)
-    }
-    cur = globalContext[part]
+  if (!_.has(globalContext, path)) {
+    throw new errors.InvalidContextPathError(`invalid context path ${path}`)
   }
-
-  cur = value
+  _.set(globalContext, path, value)
 }
 
-function getGlobalContext() {
+export function getGlobalContext(): GlobalContext {
   return globalContext
 }
 
-export function parse(input: string): typedef.Schedule {
-  // todo: implement
+export function createSchedule(opts: Partial<typedef.Schedule>): typedef.Schedule {
+  const {
+    period = stdlib.Time.Any,
+    blocks = []
+  } = opts
+
+  return { period, blocks }
+}
+
+export function parse(input: string) {
+  const prog = input.trim()
+  logger.trace({ prog }, "trimmed input")
+
+  const rule = grammar.rules.expressionStart()
+  for (const token of prog.split(/\s/)) {
+    if (!rule.allows(token)) {
+      throw new errors.UnexpectedTokenError(`unexpected token ${token}`)
+    }
+    logger.trace({ token }, "token is allowed")
+  }
 }

@@ -38,3 +38,5 @@ export const expressions = {
   lte: "<=",
   not: "not",
 }
+
+export const variableNameExpr = /^[a-zA-Z_]\w*$/

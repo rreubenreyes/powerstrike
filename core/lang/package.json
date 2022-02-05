@@ -24,7 +24,8 @@
     "build": "tsc",
     "prepare": "npm run build",
     "start": "node dist/index.js",
-    "test": "LOG_LEVEL=fatal jest --verbose --collect-coverage"
+    "test": "LOG_LEVEL=fatal jest --verbose --collect-coverage",
+    "test:trace": "LOG_LEVEL=trace jest --verbose --collect-coverage"
   },
   "author": "Reuben Reyes",
   "license": "MIT"
