@@ -11,7 +11,7 @@ describe("parsing", () => {
 
   test.only("minimum viable program", () => {
     const prog = `
-    schedule {  }
+    schedule {}
     `
     const resultAST = parser.parse(prog)
     expect(resultAST.firstChild()).toBeInstanceOf(ast.AnonymousStructNode)

@@ -26,7 +26,7 @@ class Node {
     return this.children[index]
   }
 
-  protected addChild(child: Node): void {
+  public addChild(child: Node): void {
     this.children.push(child)
   }
 
@@ -52,7 +52,7 @@ export class RootNode extends Node {
 class ChildNode extends Node {
   constructor(kind: string, root: Node | null) {
     super(kind, root)
-    super.addChild(this)
+    this.head().addChild(this)
   }
 }
 
@@ -72,7 +72,7 @@ class BinaryChildNode extends Node {
 
   constructor(kind: string, left: Node, right: Node, root: Node | null) {
     super(kind, root)
-    super.addChild(this)
+    this.head().addChild(this)
 
     this.left = left
     this.right = right
@@ -82,7 +82,7 @@ class BinaryChildNode extends Node {
 export class BinaryOperationNode extends BinaryChildNode {
   constructor(kind: string, left: Node, right: Node, root: Node | null) {
     super(kind, left, right, root)
-    super.addChild(this)
+    this.head().addChild(this)
   }
 }
 
@@ -103,6 +103,6 @@ export class AnonymousStructNode extends ChildNode {
 
   constructor(kind: string, root: Node | null) {
     super(kind, root)
-    super.addChild(this)
+    this.head().addChild(this)
   }
 }
