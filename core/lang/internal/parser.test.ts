@@ -3,12 +3,14 @@ import * as ast from "./ast"
 import * as parser from "./parser"
 
 describe("parsing", () => {
+  // TODO(TDD): broke this, expect to fix once lexer is implemented
   test("empty program", () => {
     const prog = ``
     const result = parser.parse(prog)
     expect(result).toEqual(new ast.RootNode())
   })
 
+  // TODO(TDD): broke this, expect to fix once lexer is implemented
   test("minimum viable program", () => {
     const prog = `
     schedule {}

@@ -1,3 +1,4 @@
+// TODO(TDD): write tests
 import _logger from "./util/logger"
 import * as stateMachine from "./util/state_machine"
 // import * as errors from "./util/errors"
@@ -33,8 +34,12 @@ export interface Comment extends Token {
   kind: "comment";
 }
 
-export interface Operator extends Token {
-  kind: "operator";
+export interface UnaryOperator extends Token {
+  kind: "unaryOperator";
+}
+
+export interface BinaryOperator extends Token {
+  kind: "binaryOperator";
 }
 
 export interface Separator extends Token {
@@ -119,6 +124,8 @@ export function* generator(prog: string) {
   let line = 1
   let col = 0
 
+  // TODO: handle comments
+  // TODO: handle identifiers
   const machine = stateMachine.create({
     startAt: "default",
     states: [
