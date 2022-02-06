@@ -15,6 +15,7 @@ export const rules: { [index: string]: Rule } = {
         lexer.tokens.exercise,
         lexer.tokens.template,
         lexer.tokens.schedule,
+        lexer.tokens.whitespace,
       ].includes(token)
     },
     next: (token) => {
@@ -38,7 +39,7 @@ export const rules: { [index: string]: Rule } = {
     next: (token) => {
       switch (token) {
       case lexer.tokens.lcbrace:
-        return [rules.identifier, rules.structEnd]
+        return [rules.structEnd, rules.identifier]
       case lexer.tokens.whitespace:
         return [rules.structStart]
       default:

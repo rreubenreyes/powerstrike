@@ -24,15 +24,17 @@ export function parse(input: string) {
     (() => {
       for (const rule of allowedRules) {
         const ctx = { line, col, token, rule }
-        logger.trace(ctx, `current rule is '${rule.name}''`)
+        logger.trace(ctx, "received next token")
+        logger.trace(ctx, `current rule is '${rule.name}'`)
 
-        if (!rule.allows(String(token))) {
+        if (!rule.allows(token)) {
           logger.trace(ctx, "rule does not allow token; evaluating next")
           continue
         }
         logger.trace(ctx, "rule allows token")
 
         if (rule === grammar.rules.anyExpression) {
+          logger.trace(ctx, "encountered whitespace")
           if (token === lexer.tokens.whitespace) {
             return
           }
@@ -49,6 +51,7 @@ export function parse(input: string) {
         }
         if (rule === grammar.rules.structStart) {
           if (token === lexer.tokens.whitespace) {
+            logger.trace(ctx, "encountered whitespace")
             return
           }
 
@@ -62,6 +65,7 @@ export function parse(input: string) {
         }
         if (rule === grammar.rules.structEnd) {
           if (token === lexer.tokens.whitespace) {
+            logger.trace(ctx, "encountered whitespace")
             return
           }
 
@@ -80,7 +84,7 @@ export function parse(input: string) {
     })()
   }
 
-  logger.trace({ node }, "parsed all tokens")
+  logger.trace({ node: node.kind }, "parsed all tokens")
   if (!(node instanceof ast.RootNode)) {
     logger.trace("encountered unexpected EOF")
     throw new errors.ParsingError("unexpected EOF")
