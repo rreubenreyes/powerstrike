@@ -34,8 +34,8 @@ export function parse(input: string) {
         logger.trace(ctx, "rule allows token")
 
         if (rule === grammar.rules.anyExpression) {
-          logger.trace(ctx, "encountered whitespace")
           if (token === lexer.tokens.whitespace) {
+            logger.trace(ctx, "encountered whitespace")
             return
           }
 
