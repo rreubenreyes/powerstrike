@@ -24,9 +24,8 @@ export function parse(input: string) {
     (() => {
       for (const rule of allowedRules) {
         const ctx = { line, col, token, rule }
-        logger.trace(ctx, "received next token")
-        logger.trace(ctx, `current rule is '${rule.name}'`)
 
+        logger.trace(ctx, "received next token")
         if (!rule.allows(token)) {
           logger.trace(ctx, "rule does not allow token; evaluating next")
           continue
