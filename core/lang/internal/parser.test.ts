@@ -18,6 +18,7 @@ describe("parsing", () => {
     expect(resultAST.firstChild().getRoot()).toBe(resultAST)
   })
 
+  // TODO(TDD): not passing yet
   test("struct with fields", () => {
     const prog = `
     schedule {

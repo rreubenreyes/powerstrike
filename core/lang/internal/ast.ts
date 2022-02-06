@@ -26,7 +26,7 @@ class Node {
     return this.children[index]
   }
 
-  public addChild(child: Node): void {
+  addChild(child: Node): void {
     this.children.push(child)
   }
 
@@ -58,7 +58,7 @@ class ChildNode extends Node {
 
 export class IdentifierNode extends ChildNode {}
 
-class BinaryChildNode extends Node {
+class BinaryChildNode extends ChildNode {
   private left: Node
   private right: Node
 
