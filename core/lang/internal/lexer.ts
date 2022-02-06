@@ -42,17 +42,28 @@ export const tokens = {
 
 export function* generator(prog: string) {
   const lines = prog.split(/[\f\r\n\v]/)
-  for (let line = 1; line <= lines.length; line++) {
-    let token = ""
-    for (let col = 0; col < lines[line - 1].length; col++) {
+  let token = ""
+  let line = 0
+  let col = 1
+  for (line = 1; line <= lines.length; line++) {
+    for (col = 0; col < lines[line - 1].length; col++) {
+      if (Object.values(tokens).includes(token)) {
+        logger.trace({ token, col }, "yielding next token")
+        yield { line, col, token }
+        token = ""
+      }
+
       const char = lines[line - 1][col]
-      logger.trace({ token, col }, "yielding next token")
       if (!Object.values(tokens).includes(token)) {
         token += char
-        continue
       }
-      yield { line, col, token: token }
-      token = ""
     }
   }
+
+  if (Object.values(tokens).includes(token)) {
+    logger.trace({ token, col }, "yielding last token")
+    yield { line, col, token }
+  }
+
+  return null
 }
