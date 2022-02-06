@@ -2,7 +2,7 @@ import * as ast from "./ast"
 import * as lexer from "./lexer"
 import * as grammar from "./grammar"
 import * as errors from "./errors"
-import logger from "./logger"
+import logger from "./util/logger"
 
 function consume(ctx: { line: number; col: number; token: string; rule: grammar.Rule }) {
   const nextRules = ctx.rule.next(ctx.token)
