@@ -21,6 +21,8 @@ export const rules: { [index: string]: Rule } = {
       switch (token) {
       case lexer.tokens.schedule:
         return [rules.structStart]
+      case lexer.tokens.whitespace:
+        return [rules.anyExpression]
       default:
         return null
       }
@@ -28,14 +30,17 @@ export const rules: { [index: string]: Rule } = {
   },
 
   structStart: {
-    name: "test",
+    name: "structStart",
     allows: (token) => {
       return token === lexer.tokens.lcbrace
+        || token === lexer.tokens.whitespace
     },
     next: (token) => {
       switch (token) {
       case lexer.tokens.lcbrace:
         return [rules.identifier, rules.structEnd]
+      case lexer.tokens.whitespace:
+        return [rules.structStart]
       default:
         return null
       }
@@ -46,11 +51,14 @@ export const rules: { [index: string]: Rule } = {
     name: "structEnd",
     allows: (token) => {
       return token === lexer.tokens.rcbrace
+        || token === lexer.tokens.whitespace
     },
     next: (token) => {
       switch (token) {
       case lexer.tokens.rcbrace:
         return [rules.anyExpression]
+      case lexer.tokens.whitespace:
+        return [rules.structEnd]
       default:
         return null
       }

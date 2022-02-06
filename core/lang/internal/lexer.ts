@@ -1,5 +1,4 @@
 import logger from "./logger"
-import * as errors from "./errors"
 
 export const tokens = {
   // keywords
@@ -30,6 +29,7 @@ export const tokens = {
   rsqbrace: "]",
   lcbrace: "{",
   rcbrace: "}",
+  whitespace: " ",
 
   // binary expressions
   eq: "==",
@@ -44,19 +44,15 @@ export function* generator(prog: string) {
   const lines = prog.split(/[\f\r\n\v]/)
   for (let line = 1; line <= lines.length; line++) {
     let token = ""
-    for (let col = 1; col <= lines[line - 1].length; col++) {
-      const char = lines[line - 1][col - 1]
-      if (/\S/.test(char)) {
-        token += char
-        continue
-      }
+    for (let col = 0; col < lines[line - 1].length; col++) {
+      const char = lines[line - 1][col]
       logger.trace({ token, col }, "yielding next token")
       if (!Object.values(tokens).includes(token)) {
-        throw new errors.UnrecognizedTokenError(`(line ${line}, col ${col - token.length}): unexpected token "${token}"`)
+        token += char
+        continue
       }
       yield { line, col, token: token }
       token = ""
     }
   }
-  return null
 }

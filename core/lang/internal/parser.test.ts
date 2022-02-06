@@ -9,13 +9,29 @@ describe("parsing", () => {
     expect(result).toEqual(new ast.RootNode())
   })
 
-  test("minimum viable program", () => {
+  test.only("minimum viable program", () => {
     const prog = `
-      schedule {}
+    schedule {  }
     `
     const resultAST = parser.parse(prog)
-    for (const child of resultAST.getChildren()) {
-      expect(child).toBeInstanceOf(ast.AnonymousStructNode)
+    expect(resultAST.firstChild()).toBeInstanceOf(ast.AnonymousStructNode)
+    expect(resultAST.firstChild().getRoot()).toBe(resultAST)
+  })
+
+  test("struct with fields", () => {
+    const prog = `
+    schedule {
+      period = time.Week
     }
+    `
+    const resultAST = parser.parse(prog)
+    expect(resultAST.firstChild()).toBeInstanceOf(ast.AnonymousStructNode)
+
+    const structNode = resultAST.firstChild()
+    expect(structNode.firstChild()).toBeInstanceOf(ast.BinaryOperationNode)
+
+    const binaryOperationNode = structNode.firstChild()
+    expect((binaryOperationNode.firstChild() as ast.BinaryOperationNode).getLeft()).toBeInstanceOf(ast.IdentifierNode)
+    expect((binaryOperationNode.firstChild() as ast.BinaryOperationNode).getLeft()).toBeInstanceOf(ast.IdentifierNode)
   })
 })

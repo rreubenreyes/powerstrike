@@ -33,6 +33,10 @@ export function parse(input: string) {
         logger.trace(ctx, "rule allows token")
 
         if (rule === grammar.rules.anyExpression) {
+          if (token === lexer.tokens.whitespace) {
+            return
+          }
+
           if (token === lexer.tokens.schedule) {
             logger.trace(ctx, "encountered keyword 'schedule'")
             const { rules: nextRules } = consume(ctx)
@@ -44,6 +48,10 @@ export function parse(input: string) {
           }
         }
         if (rule === grammar.rules.structStart) {
+          if (token === lexer.tokens.whitespace) {
+            return
+          }
+
           if (token === lexer.tokens.lcbrace) {
             logger.trace(ctx, "encountered punctuation 'lcbrace'")
             const { rules: nextRules } = consume(ctx)
@@ -53,6 +61,10 @@ export function parse(input: string) {
           }
         }
         if (rule === grammar.rules.structEnd) {
+          if (token === lexer.tokens.whitespace) {
+            return
+          }
+
           if (token === lexer.tokens.rcbrace) {
             logger.trace(ctx, "encountered punctuation 'rcbrace'")
             const { rules: nextRules } = consume(ctx)
@@ -68,12 +80,10 @@ export function parse(input: string) {
     })()
   }
 
-  // evaluate EOF case
-  if (gen === null) {
-    if (!(node instanceof ast.RootNode)) {
-      logger.trace("encountered unexpected EOF")
-      throw new errors.ParsingError("unexpected EOF")
-    }
+  logger.trace({ node }, "parsed all tokens")
+  if (!(node instanceof ast.RootNode)) {
+    logger.trace("encountered unexpected EOF")
+    throw new errors.ParsingError("unexpected EOF")
   }
 
   logger.trace("encountered valid EOF")

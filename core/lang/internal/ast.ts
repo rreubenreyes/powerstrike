@@ -3,7 +3,7 @@ import * as errors from "./errors"
 class Node {
   public kind: string
   private root: Node | null
-  private children: Node[] = []
+  protected children: Node[] = []
 
   constructor(kind: string, root: Node | null) {
     this.kind = kind
@@ -15,6 +15,10 @@ class Node {
       throw new errors.ImplementationError("unexpected head() call at AST root")
     }
 
+    return this.root
+  }
+
+  getRoot(): Node | null {
     return this.root
   }
 
@@ -52,8 +56,50 @@ class ChildNode extends Node {
   }
 }
 
+export class IdentifierNode extends ChildNode {}
+
+class BinaryChildNode extends Node {
+  private left: Node
+  private right: Node
+
+  getLeft(): ChildNode {
+    return this.left
+  }
+
+  getRight(): ChildNode {
+    return this.right
+  }
+
+  constructor(kind: string, left: Node, right: Node, root: Node | null) {
+    super(kind, root)
+    super.addChild(this)
+
+    this.left = left
+    this.right = right
+  }
+}
+
+export class BinaryOperationNode extends BinaryChildNode {
+  constructor(kind: string, left: Node, right: Node, root: Node | null) {
+    super(kind, left, right, root)
+    super.addChild(this)
+  }
+}
+
 export class AnonymousStructNode extends ChildNode {
-  public fields: ChildNode[] = []
+  protected children: BinaryOperationNode[] = []
+
+  getChildren(): BinaryOperationNode[] {
+    return this.children
+  }
+
+  firstChild(): BinaryOperationNode {
+    return this.children[0]
+  }
+
+  lastChild(): BinaryOperationNode {
+    return this.children[this.children.length - 1]
+  }
 
   constructor(kind: string, root: Node | null) {
     super(kind, root)
