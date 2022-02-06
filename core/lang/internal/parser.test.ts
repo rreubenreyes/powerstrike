@@ -9,7 +9,7 @@ describe("parsing", () => {
     expect(result).toEqual(new ast.RootNode())
   })
 
-  test.only("minimum viable program", () => {
+  test("minimum viable program", () => {
     const prog = `
     schedule {}
     `
