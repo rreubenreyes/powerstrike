@@ -1,12 +1,13 @@
 // TODO(TDD): write tests
 import _logger from "./util/logger"
 import * as stateMachine from "./util/state_machine"
-// import * as errors from "./util/errors"
-//
+import * as errors from "./util/errors"
+
 const logger = _logger.child({ component: "lexer" })
 
 export interface Token {
   kind: string;
+  subkind?: string;
   value: string;
 }
 
@@ -19,15 +20,18 @@ export interface Identifier extends Token {
 }
 
 export interface BooleanLiteral extends Token {
-  kind: "boolean";
+  kind: "literal";
+  subkind: "boolean";
 }
 
-export interface IntegerLiteral extends Token {
-  kind: "number";
+export interface NumberLiteral extends Token {
+  kind: "literal";
+  subkind: "number";
 }
 
 export interface StringLiteral extends Token {
-  kind: "string";
+  kind: "literal";
+  subkind: "string";
 }
 
 export interface Comment extends Token {
@@ -43,7 +47,12 @@ export interface BinaryOperator extends Token {
 }
 
 export interface Separator extends Token {
-  kind: "separator";
+  subkind: "separator";
+}
+
+function createToken(context: Context): Token {
+  const { kind, subkind, value } = context
+  return { kind, subkind, value }
 }
 
 function isKeyword(value: string): boolean {
@@ -111,18 +120,16 @@ function isAnyWhitespace(char: string): boolean {
 
 interface Context {
   char: string;
-  token: "literal" | "identifier" | "keyword" | "separator" | "obscure" | "binaryOperator" | "unaryOperator" | "unknown";
-  kind?: string;
+  kind: "literal" | "identifier" | "keyword" | "separator" | "obscure" | "binaryOperator" | "unaryOperator" | "unknown";
+  subkind?: string;
   value: string;
+  isEOF: boolean;
   error: boolean;
   done: boolean;
 }
 
 export function* generator(prog: string) {
-  const lines = prog.split(/[\f\r\n\v]/)
-  let token = ""
-  let line = 1
-  let col = 0
+  logger.trace({ method: "~generator" }, "starting")
 
   // TODO: handle comments
   // TODO: handle identifiers
@@ -131,14 +138,14 @@ export function* generator(prog: string) {
     states: [
       {
         name: "default",
-        handler: (params: Context) => {
+        handler: (params: Context): Context => {
           logger.trace(params, "handling 'default' state")
           // yield separator
           if (isSeparator(params.char)) {
-            logger.trace(params, `encountered complete token: separator '${params.value}'`)
+            logger.trace(params, `encountered complete token: separator '${params.char}'`)
             return {
               ...params,
-              token: "separator",
+              kind: "separator",
               value: params.char,
               done: true,
               error: false,
@@ -147,10 +154,10 @@ export function* generator(prog: string) {
 
           // yield keyword
           if (isKeyword(params.value)) {
-            logger.trace(params, `encountered complete token: keyword '${params.value}'`)
+            logger.trace(params, `encountered complete token: keyword '${params.char}'`)
             return {
               ...params,
-              token: "keyword",
+              kind: "keyword",
               done: true,
               error: false,
             }
@@ -158,23 +165,23 @@ export function* generator(prog: string) {
 
           // yield boolean literal
           if (isBooleanLiteral(params.value)) {
-            logger.trace(params, `encountered complete token: boolean literal '${params.value}'`)
+            logger.trace(params, `encountered complete token: boolean literal '${params.char}'`)
             return {
               ...params,
-              token: "literal",
-              kind: "boolean",
+              kind: "literal",
+              subkind: "boolean",
               done: true,
               error: false,
             }
           }
 
-          // begin constructing obscure token
+          // begin constructing obscure kind
           if (isObscureSymbol(params.char)) {
-            logger.trace(params, `encountered incomplete token: obscure symbol '${params.value}'`)
+            logger.trace(params, `encountered incomplete token: obscure symbol '${params.char}'`)
             return {
               ...params,
-              token: "obscure",
-              kind: "unknown",
+              kind: "obscure",
+              subkind: "unknown",
               value: params.char,
               done: false,
               error: false,
@@ -182,14 +189,14 @@ export function* generator(prog: string) {
           }
 
           // begin constructing number literal
-          if (isDigit(params.value)) {
-            logger.trace(params, `encountered incomplete token: number literal '${params.value}'`)
+          if (isDigit(params.char)) {
+            logger.trace(params, `encountered incomplete token: number literal '${params.char}'`)
             return {
               ...params,
-              token: "literal",
-              kind: "number",
-              value: params.value,
-              done: false,
+              kind: "literal",
+              subkind: "number",
+              value: params.value + params.char,
+              done: params.isEOF,
               error: false,
             }
           }
@@ -199,34 +206,41 @@ export function* generator(prog: string) {
             logger.trace(params, "encountered incomplete token: string literal")
             return {
               ...params,
-              token: "literal",
-              kind: "string",
+              kind: "literal",
+              subkind: "string",
               value: "",
               error: false,
               done: false,
             }
           }
 
+          logger.trace(params, "could not recognize token in 'default' state")
           return params
         },
         next: (prev: Context) => {
-          if (prev.token === "keyword") {
+          logger.trace(prev, "transitioning from 'default' state")
+
+          if (prev.kind === "keyword") {
             logger.trace(prev, "transitioning to 'default' state")
             return "default"
           }
-          if (prev.token === "obscure") {
+          if (prev.kind === "obscure") {
             logger.trace(prev, "transitioning to 'obscure' state")
             return "obscure"
           }
-          if (prev.token === "literal" && prev.kind === "boolean") {
+          if (prev.kind === "literal" && prev.subkind === "boolean") {
             logger.trace(prev, "transitioning to 'default' state")
             return "default"
           }
-          if (prev.token === "literal" && prev.kind === "number") {
+          if (prev.kind === "literal" && prev.subkind === "number") {
+            if (prev.isEOF) {
+              logger.trace(prev, "transitioning to 'default' state")
+              return "default"
+            }
             logger.trace(prev, "transitioning to 'numberLiteral' state")
             return "numberLiteral"
           }
-          if (prev.token === "literal" && prev.kind === "string") {
+          if (prev.kind === "literal" && prev.subkind === "string") {
             logger.trace(prev, "transitioning to 'stringLiteral' state")
             return "stringLiteral"
           }
@@ -235,18 +249,18 @@ export function* generator(prog: string) {
           return null
         },
         end: false,
-      } as stateMachine.Node,
+      },
       {
         name: "obscure",
         handler: (params: Context): Context => {
           logger.trace(params, "handling 'obscure' state")
 
-          const discover = (token: Context["token"], kind: Context["kind"], value: string) => {
-            logger.trace(params, `encountered complete token: ${token} '${kind}'`)
+          const discover = (kind: Context["kind"], subkind: Context["subkind"], value: string) => {
+            logger.trace(params, `encountered complete token: ${kind} '${subkind}'`)
             return {
               ...params,
-              token,
               kind,
+              subkind,
               value,
               done: true,
               error: false,
@@ -271,7 +285,7 @@ export function* generator(prog: string) {
             }
             return {
               ...params,
-              token: "obscure",
+              kind: "obscure",
               done: true,
               error: true,
             }
@@ -294,7 +308,7 @@ export function* generator(prog: string) {
             }
             return {
               ...params,
-              token: "obscure",
+              kind: "obscure",
               done: true,
               error: true,
             }
@@ -317,7 +331,7 @@ export function* generator(prog: string) {
             }
             return {
               ...params,
-              token: "obscure",
+              kind: "obscure",
               done: true,
               error: true,
             }
@@ -339,7 +353,7 @@ export function* generator(prog: string) {
             if (params.char === "*") {
               return {
                 ...params,
-                token: "obscure",
+                kind: "obscure",
                 value: "**",
                 done: true,
                 error: false,
@@ -347,7 +361,7 @@ export function* generator(prog: string) {
             }
             return {
               ...params,
-              token: "obscure",
+              kind: "obscure",
               done: true,
               error: true,
             }
@@ -367,7 +381,7 @@ export function* generator(prog: string) {
             }
             return {
               ...params,
-              token: "obscure",
+              kind: "obscure",
               done: true,
               error: true,
             }
@@ -387,7 +401,7 @@ export function* generator(prog: string) {
             }
             return {
               ...params,
-              token: "obscure",
+              kind: "obscure",
               done: true,
               error: true,
             }
@@ -407,7 +421,7 @@ export function* generator(prog: string) {
             }
             return {
               ...params,
-              token: "obscure",
+              kind: "obscure",
               done: true,
               error: true,
             }
@@ -427,7 +441,7 @@ export function* generator(prog: string) {
             }
             return {
               ...params,
-              token: "obscure",
+              kind: "obscure",
               done: true,
               error: true,
             }
@@ -447,7 +461,7 @@ export function* generator(prog: string) {
             }
             return {
               ...params,
-              token: "obscure",
+              kind: "obscure",
               done: true,
               error: true,
             }
@@ -467,34 +481,34 @@ export function* generator(prog: string) {
             }
             return {
               ...params,
-              token: "obscure",
+              kind: "obscure",
               done: true,
               error: true,
             }
           default:
             return {
               ...params,
-              token: "obscure",
+              kind: "obscure",
               done: true,
               error: true,
             }
           }
         },
         next: (prev: Context) => {
-          if (prev.token === "obscure") {
+          if (prev.kind === "obscure") {
             logger.trace(prev, "transitioning to 'obscure' state because current symbol is still obscure")
             return "obscure"
           }
-          if (prev.token !== "unaryOperator" && prev.token !== "binaryOperator") {
-            logger.error(prev, "no valid state transitions from 'obscure': discovered token is neither 'unaryOperator' nor 'binaryOperator'")
+          if (prev.kind !== "unaryOperator" && prev.kind !== "binaryOperator") {
+            logger.error(prev, "no valid state transitions from 'obscure': discovered kind is neither 'unaryOperator' nor 'binaryOperator'")
             return null
           }
 
-          logger.trace(prev, "transitioning to 'default' state: found valid token")
+          logger.trace(prev, "transitioning to 'default' state: found valid kind")
           return "default"
         },
         end: false,
-      } as stateMachine.Node,
+      },
       {
         name: "stringLiteral",
         handler: (params: Context): Context => {
@@ -539,7 +553,7 @@ export function* generator(prog: string) {
           return "stringLiteral"
         },
         end: false,
-      } as stateMachine.Node,
+      },
       {
         name: "numberLiteral",
         handler: (params: Context): Context => {
@@ -551,7 +565,7 @@ export function* generator(prog: string) {
               ...params,
               value: params.value + params.char,
               error: false,
-              done: false,
+              done: params.isEOF,
             }
           }
           if (isAnyWhitespace(params.char)) {
@@ -563,7 +577,7 @@ export function* generator(prog: string) {
             }
           }
 
-          logger.trace(params, "invalid token found within number literal: will throw InvalidTokenError")
+          logger.trace(params, "invalid character found within number literal: will throw InvalidTokenError")
           return {
             ...params,
             error: true,
@@ -571,8 +585,8 @@ export function* generator(prog: string) {
           }
         },
         next: (prev: Context) => {
-          if (isDigit(prev.char) || (prev.char === "." && !prev.value.includes("."))) {
-            logger.trace(prev, "transitioning to 'numberLiteral' state because current string is unterminated")
+          if ((isDigit(prev.char) || prev.char === ".") && !prev.error) {
+            logger.trace(prev, "transitioning to 'numberLiteral' state because current number is unterminated")
             return "numberLiteral"
           }
           if (isAnyWhitespace(prev.char)) {
@@ -580,18 +594,53 @@ export function* generator(prog: string) {
             return "default"
           }
 
-          logger.trace(prev, "no valid state transitions from 'numberLiteral': invalid token within number literal")
+          logger.trace(prev, "no valid state transitions from 'numberLiteral': invalid character within number literal")
           return null
         },
         end: false,
-      } as stateMachine.Node,
+      },
     ]
   })
 
-  for (line = 1; line <= lines.length; line++) {
-    for (col = 0; col < lines[line - 1].length; col++) {
+
+  logger.debug({ method: "~generator" }, "starting token generation")
+  let currentContext: Context | null = null
+  let col = 0
+  let line = 1
+  let char: string
+  for (let i = 0; i < prog.length; i++) {
+    char = prog[i]
+    if (currentContext === null) {
+      currentContext = {
+        char,
+        kind: "unknown",
+        isEOF: false,
+        value: "",
+        error: false,
+        done: false,
+      }
+    }
+
+    currentContext = machine.next({ ...currentContext, char, isEOF: i === prog.length - 1 }).result
+    if (currentContext.error) {
+      const err = new errors.InvalidTokenError(`(line ${line}, col ${col}): invalid token`)
+      logger.error({ err }, err.message)
+      throw err
+
+    }
+    if (currentContext.done) {
+      yield createToken(currentContext)
+    }
+
+    col++
+    if (char === "\n") {
+      line++
+      col = 0
     }
   }
 
+  // yield final state transition, if any
+
+  logger.trace({ method: "~generator" }, "done")
   return null
 }

@@ -1,34 +1,21 @@
 import logger from "./logger"
 import * as errors from "./errors"
 
-export interface Node {
+export interface Node<T1, T2 = T1> {
   name: string;
-  handler: <T1, T2>(params: T1) => T2;
-  next: <T1>(prev: T1) => string | null;
+  handler: (params: T1) => T2;
+  next: (prev: T2) => string | null;
   end: boolean;
 }
 
-export interface StateMachine {
-  current: Node;
+export interface StateMachine<T1, T2 = T1> {
+  current: Node<T1, T2>;
   states: {
-    [index: string]: Node;
+    [index: string]: Node<T1, T2>;
   };
 }
 
-function executeHandler<T1, T2>(stateMachine: StateMachine, params: T1) {
-  try {
-    const result = stateMachine.current.handler(params) as T2
-    return result
-  } catch (err) {
-    const msg = "error in state machine handler"
-    logger.error({ err, state: stateMachine.current }, msg)
-    throw new errors.ImplementationError(msg, {
-      info: { state: stateMachine.current }
-    })
-  }
-}
-
-function construct({ startAt, states }: { startAt: string; states: Node[] }): StateMachine {
+function construct<T1, T2 = T1>({ startAt, states }: { startAt: string; states: Node<T1, T2>[] }): StateMachine<T1, T2> {
   const initialState = states.find(s => s.name === startAt)
   if (!initialState) {
     throw new errors.ImplementationError(`invalid startAt: ${startAt}`)
@@ -36,7 +23,7 @@ function construct({ startAt, states }: { startAt: string; states: Node[] }): St
 
   return {
     current: initialState,
-    states: states.reduce((acc: StateMachine["states"], s) => {
+    states: states.reduce((acc: { [index: string]: Node<T1, T2> }, s) => {
       if (!s.next && !s.end) {
         throw new errors.ImplementationError(`invalid state: state with no outgoing edges must be an end state`)
       }
@@ -46,16 +33,24 @@ function construct({ startAt, states }: { startAt: string; states: Node[] }): St
   }
 }
 
-export function create({ startAt, states }: { startAt: string; states: Node[] }) {
+export function create<T1, T2>({ startAt, states }: { startAt: string; states: Node<T1, T2>[] }) {
   const stateMachine = construct({ startAt, states })
   return {
-    next: <T1, T2>(params: T1) => {
-      const result = executeHandler(stateMachine, params) as T2
-      const nextState = stateMachine.current.next(result)
-      if (nextState) {
-        stateMachine.current = stateMachine.states[nextState]
+    next: (params: T1) => {
+      try {
+        const result = stateMachine.current.handler(params)
+        const nextState = stateMachine.current.next(result)
+        if (nextState) {
+          stateMachine.current = stateMachine.states[nextState]
+        }
+        return { result, done: stateMachine.current.end }
+      } catch (err) {
+        const msg = "error in state machine handler"
+        logger.error({ err, state: stateMachine.current }, msg)
+        throw new errors.ImplementationError(msg, {
+          info: { state: stateMachine.current }
+        })
       }
-      return { result, done: stateMachine.current.end }
     },
     done: () => stateMachine.current.end,
   }
