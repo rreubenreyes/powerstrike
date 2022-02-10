@@ -2,8 +2,7 @@
 import * as lexer from "./lexer"
 import * as errors from "./util/errors"
 
-describe.only("lexing", () => {
-  // TODO(TDD): broke this, expect to fix once lexer is implemented
+describe("lexing", () => {
   it("accepts an empty program", () => {
     const prog = ``
     const gen = lexer.generator(prog)
