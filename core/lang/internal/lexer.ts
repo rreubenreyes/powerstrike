@@ -602,7 +602,6 @@ export function* generator(prog: string) {
     ]
   })
 
-
   logger.debug({ method: "~generator" }, "starting token generation")
   let currentContext: Context | null = null
   let col = 0
@@ -638,8 +637,6 @@ export function* generator(prog: string) {
       col = 0
     }
   }
-
-  // yield final state transition, if any
 
   logger.trace({ method: "~generator" }, "done")
   return null
