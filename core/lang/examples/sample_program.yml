@@ -1,0 +1,253 @@
+# defaults is a top-level map which configures default settings for this program.
+defaults:
+  # defaults:units sets the default unit to render all weights in this program.
+  #
+  # default: kilograms
+  units: kilograms
+  exercises:
+    # exercises:properties defines variables which can be used when writing
+    # expressions to be evaluated in this program.
+    #
+    # default: []
+    # aliases:
+    #   - exercises:has
+    properties:
+      - starting weight
+
+    # exercises:shorthand configures the use of shorthand expressions.
+    # special expressions which allow programs to be written more concisely.
+    shorthand:
+      # exercises:shorthand:enabled enables the use of shorthand expressions.
+      # without the use of explicit tags.
+      #
+      # default: true
+      enabled: true
+
+      # exercises:shorthand:sets before reps enables the assumption that
+      # in shorthand expressions, sets will come before reps.
+      #
+      # Conversely, exercises:shorthand:reps before sets enables the opposite.
+      # If both declarations are present in this block, then the latest one
+      # takes precedence.
+      #
+      # default: true
+      sets before reps: true
+
+
+# exercises is a top-level list which configures custom exercises for this program.
+exercises:
+  - name: squat
+    # exercises:renders as is a human-readable name for this exercise which is used
+    # when rendering this program.
+    #
+    # aliases:
+    #   - exercises:alias
+    renders as: Squat
+
+  - name: bench
+    renders as: Bench Press
+
+  - name: deadlift
+    renders as: Deadlift
+
+  - name: ohp
+    renders as: Overhead Press
+
+  - name: row
+    renders as: Barbell Row
+
+# templates is a top-level list which contains reusable templates for this program.
+templates:
+  - name: Week A
+    # templates[]:renders as is a human-readable name for this exercise which is used
+    # when rendering this program.
+    #
+    # aliases:
+    #   - templates[]:alias
+    renders as: Week A
+    # templates[]:inputs is a list of variables accepted by this template.
+    # Variables must be scalars.
+    #
+    # If a member of templates[]:inputs is specified as a string, then the defaults are:
+    #   - type: number
+    inputs:
+      - squat increment
+      - squat starting weight
+      - bench increment
+      - bench starting weight
+      - deadlift increment
+      - deadlift starting weight
+      - ohp increment
+      - ohp starting weight
+      - row increment
+      - row starting weight
+
+    outputs:
+      - squat ending weight
+      - bench ending weight
+      - deadlift ending weight
+      - ohp ending weight
+      - row ending weight
+
+    sessions:
+      - name: A
+        # templates[]:sessions[]:exercises is the list of exercises which
+        # are expected as input for this template.
+        #
+        # Members are expected to be valid exercise data types, and keys
+        # must be included in the top-level exercises block.
+        exercises:
+          # An exaxmple of templates[]:sessions[]:exercises[] being specified
+          # in long form.
+          - squat:
+              weight:
+                # An example of the use of the std:: namespace.
+                #
+                # std::evaluate accepts either:
+                #   - a valid method identifier, whose arguments are further passed in
+                #     as scalars for unary methods, or lists for 2+ary methods
+                #   - a string or folded block scalar, which allows the entire std:: namespace
+                #     to be utilized in JavaScript.
+                std::evaluate:
+                  sum:
+                    # std::input references the encompassing template.
+                    # The use of std::input is only valid in the context of a template.
+                    - !input squat input weight
+                    - !input squat increment
+              sets: 5
+              reps: 5
+
+          - bench:
+              weight:
+                # The std:: namespace can also be used without explicitly using
+                # std::evaluate.
+                #
+                # std::sum is a convenience shorthand for std::evaluate followed by
+                # std::sum.
+                std::sum:
+                  - !input bench input weight
+                  - !input bench increment
+              sets: 5
+              reps: 5
+
+          - row:
+              # An example of std::evaluate being used via a folded block scalar.
+              weight: !evaluate >
+                sum(
+                  input("row input weight"),
+                  input("row increment"),
+                )
+              sets: 5
+              reps: 5
+
+      - name: B
+        exercises:
+          # An exaxmple of templates[]:sessions[]:exercises[] being specified
+          # in shorthand.
+          #
+          # The explicit !shorthand tag is not needed if defaults:exercises:shorthand:enabled
+          # is set.
+          - squat: !shorthand (squat starting weight + squat increment)x5x5
+          - ohp: (ohp starting weight + ohp increment)x5x5
+          - deadlift: (deadlift starting weight + deadlift increment)x5x5
+
+      - name: C
+        exercises:
+          # An exaxmple of templates[]:sessions[]:exercises[] being specified
+          # in shorthand.
+          #
+          # The explicit !shorthand tag is not needed if defaults:exercises:shorthand:enabled
+          # is set.
+          - squat: (squat starting weight + (2 * squat increment))x5x5
+          - ohp: (ohp starting weight + ohp increment + 2.5)x5x5
+          - row: (row starting weight + row increment + 2.5)x5x5
+
+  - name: Week B
+    renders as: Week B
+    inputs:
+      - squat increment
+      - squat starting weight
+      - bench increment
+      - bench starting weight
+      - deadlift increment
+      - deadlift starting weight
+      - ohp increment
+      - ohp starting weight
+      - row increment
+      - row starting weight
+    sessions:
+      - name: A
+        exercises:
+          - squat: (squat starting weight)x5x5
+          - ohp: (ohp starting weight)x5x5
+          - deadlift: (deadlift starting weight)x5x5
+
+      - name: B
+        exercises:
+          - squat: (squat starting weight + squat increment)x5x5
+          - bench: (bench starting weight)x5x5
+          - row: (row starting weight)x5x5
+
+      - name: C
+        exercises:
+          - squat: (squat starting weight + (2 * squat increment))x5x5
+          - ohp: (ohp starting weight + ohp increment)x5x5
+          - deadlift: (deadlift starting weight + deadlift increment)x5x5
+
+schedule:
+  blocks:
+    - name: Week 1
+      template: Week A
+      inputs:
+        - squat starting weight: 60
+        - squat increment: 5
+
+        - bench starting weight: 20
+        - bench increment: 2.5
+
+        - deadlift starting weight: 60
+        - deadlift increment: 5
+
+        - ohp starting weight: 20
+        - ohp increment: 2.5
+
+        - row starting weight: 20
+        - row increment: 2.5
+    - name: Week 2
+      template: Week B
+      inputs:
+        - squat starting weight: !evaluate >
+            output(
+              block("Week 1"),
+              "squat ending weight"
+            ) + 5
+        - squat increment: 5
+
+        - bench starting weight: !evaluate >
+            output(
+              block("Week 1"),
+              "bench ending weight"
+            ) + 5
+        - bench increment: 2.5
+
+        - deadlift starting weight: !evaluate >
+            output(
+              block("Week 1"),
+              "deadlift ending weight"
+            ) + 5
+        - deadlift increment: 5
+
+        - ohp starting weight: !evaluate >
+            output(
+              block("Week 1"),
+              "ohp ending weight"
+            ) + 5
+        - ohp increment: 2.5
+
+        - row starting weight: !evaluate >
+            output(
+              block("Week 1"),
+              "row ending weight"
+            ) + 5
+        - row increment: 2.5
+

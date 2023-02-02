@@ -35,6 +35,7 @@ function construct<T1, T2 = T1>({ startAt, states }: { startAt: string; states: 
 
 export function create<T1, T2>({ startAt, states }: { startAt: string; states: Node<T1, T2>[] }) {
   const stateMachine = construct({ startAt, states })
+
   return {
     next: (params: T1) => {
       try {
