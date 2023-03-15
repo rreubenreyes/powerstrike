@@ -5,52 +5,56 @@ import * as program from "./program"
 import * as yamlUtils from "./yaml"
 import * as reflect from "./util/reflect"
 
-function parseDefaults(defaults: unknown): program.Defaults {
+function parseDefaults(record: unknown): program.Defaults {
   const dd = program.defaultDefaults()
 
-  if (!defaults) {
+  if (record === undefined) {
     return dd
   }
 
-  if (!reflect.isRecord(defaults)) {
-    throw new errors.SyntaxError("invalid defaults")
+  if (!reflect.isRecord(record)) {
+    throw new errors.SyntaxError("invalid defaults - expected map")
   }
 
-  if (typeof defaults.units === "string") {
-    if (!["kilograms", "pounds"].includes(defaults.units)) {
-      throw new errors.SyntaxError("invalid defaults:units")
+  if (typeof record.units === "string") {
+    if (!["kilograms", "pounds"].includes(record.units)) {
+      throw new errors.SyntaxError("invalid defaults:units - expected one of [\"kilograms\", \"pounds\"]")
     }
-    dd.units = defaults.units
+    dd.units = record.units
   }
 
-  if (reflect.isRecord(defaults.exercises)) {
+  if (reflect.isRecord(record.exercises)) {
     const exercises = dd.exercises
-    if (Array.isArray(defaults.exercises.properties)) {
-      if (defaults.exercises.properties.some(p => typeof p !== "string")) {
-        throw new errors.SyntaxError("invalid defaults:exercises:properties")
+
+    if (Array.isArray(record.exercises.properties)) {
+      if (record.exercises.properties.some(p => typeof p !== "string")) {
+        throw new errors.SyntaxError("invalid defaults:exercises:properties - expected string")
       }
-      exercises.properties = defaults.exercises.properties
+      exercises.properties = record.exercises.properties
     }
 
     dd.exercises = exercises
+  }
 
-    if (reflect.isRecord(defaults.shorthand)) {
-      const shorthand = dd.shorthand
-      if (typeof defaults.shorthand.enabled !== "boolean") {
-        throw new errors.SyntaxError("invalid defaults:shorthand:enabled")
-      }
-      shorthand.enabled = defaults.shorthand.enabled
+  if (reflect.isRecord(record.shorthand)) {
+    const shorthand = dd.shorthand
 
-      if (typeof defaults.shorthand.sets_before_reps !== "boolean") {
-        throw new errors.SyntaxError("invalid defaults:shorthand:sets_before_reps")
-      }
-      shorthand.setsBeforeReps = defaults.shorthand.sets_before_reps
-
-      if (typeof defaults.shorthand.reps_before_sets !== "boolean") {
-        throw new errors.SyntaxError("invalid defaults:shorthand:reps_before_sets")
-      }
-      shorthand.repsBeforeSets = defaults.shorthand.reps_before_sets
+    if (typeof record.shorthand.enabled !== "boolean") {
+      throw new errors.SyntaxError("invalid defaults:shorthand:enabled - expected bool")
     }
+    shorthand.enabled = record.shorthand.enabled
+
+    if (typeof record.shorthand.sets_before_reps !== "boolean") {
+      throw new errors.SyntaxError("invalid defaults:shorthand:sets_before_reps - expected bool")
+    }
+    shorthand.setsBeforeReps = record.shorthand.sets_before_reps
+
+    if (typeof record.shorthand.reps_before_sets !== "boolean") {
+      throw new errors.SyntaxError("invalid defaults:shorthand:reps_before_sets - expected bool")
+    }
+    shorthand.repsBeforeSets = record.shorthand.reps_before_sets
+
+    dd.shorthand = shorthand
   }
 
   return dd
