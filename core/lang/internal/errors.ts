@@ -15,6 +15,5 @@ function define(name: string): typeof err {
 }
 
 export const ImplementationError = define("ImplementationError")
-export const InvalidContextPathError = define("InvalidContextPathError")
-export const InvalidTokenError = define("InvalidTokenError")
-export const ParsingError = define("ParsingError")
+export const InvalidProgramError = define("InvalidProgramError")
+export const SyntaxError = define("SyntaxError")

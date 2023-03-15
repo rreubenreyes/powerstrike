@@ -11,6 +11,7 @@ module.exports = {
     quotes: ["error", "double", { "allowTemplateLiterals": true }],
     indent: ["error", 2, { "SwitchCase": 0 }],
     '@typescript-eslint/indent': ['error', 2, { "SwitchCase": 0 }],
-    "@typescript-eslint/explicit-function-return-type": "off"
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/no-loop-func": "off"
   }
 };
