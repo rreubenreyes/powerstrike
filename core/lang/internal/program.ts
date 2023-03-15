@@ -18,7 +18,6 @@ export interface DeclaredExercise {
 interface EvaluatedStatement {
   kind: "evaluated"
   definition: string
-  value: unknown
 }
 
 interface LiteralStatement {

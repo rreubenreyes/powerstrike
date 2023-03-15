@@ -2,6 +2,7 @@ import yaml from "js-yaml"
 
 import * as errors from "./errors"
 import * as program from "./program"
+import * as yamlUtils from "./yaml"
 import * as reflect from "./util/reflect"
 
 function parseDefaults(defaults: unknown): program.Defaults {
@@ -56,7 +57,7 @@ function parseDefaults(defaults: unknown): program.Defaults {
 }
 
 export function parse(input: string) {
-  const p = yaml.load(input)
+  const p = yaml.load(input, { schema: yamlUtils.schema })
 
   if (!reflect.isRecord(p)) {
     throw new errors.InvalidProgramError("invalid program input")
