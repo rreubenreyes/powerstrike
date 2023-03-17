@@ -1,42 +1,44 @@
-import * as errors from "./errors"
-import _logger from "./util/logger"
+import * as errors from "../errors"
+import _logger from "../util/logger"
 
-// tokenizing
-interface IdentifierToken {
+interface Identifier {
   kind: "identifier"
   value: string
 }
 
-interface ScalarToken {
-  kind: "scalar"
+interface Numeric {
+  kind: "numeric"
   value: string
 }
 
-interface DelimiterToken {
+interface Delimiter {
   kind: "delimiter"
   value: string
 }
 
-interface OperatorToken {
+interface Operator {
   kind: "operator"
   value: string
 }
 
-interface AmbiguousToken {
+interface Ambiguous {
   kind: "ambiguous"
   value: string
 }
 
-interface WhitespaceToken {
+interface Whitespace {
   kind: "whitespace"
+  value: string,
 }
 
-export type Token = IdentifierToken
-| ScalarToken
-| DelimiterToken
-| WhitespaceToken
-| OperatorToken
-| AmbiguousToken
+export type Token = (
+  Identifier
+  | Numeric
+  | Delimiter
+  | Whitespace
+  | Operator
+  | Ambiguous
+)
 
 interface Context {
   state: Token["kind"] | "unidentified"
@@ -44,7 +46,7 @@ interface Context {
 }
 
 function* consume(prog: string) {
-  let logger = _logger.child({ component: "shorthand", method: "#consume" })
+  let logger = _logger.child({ package: "shorthand", "component": "lexer", method: "#consume" })
   logger.trace("starting")
 
   const ctx: Context = {
@@ -77,9 +79,9 @@ function* consume(prog: string) {
     // if context is unidentified, we're at the beginning of a token
     if (ctx.state === "unidentified") {
       if (/[0-9\.]/.test(next)) {
-        // valid beginning scalar characters
-        logger.trace("next state is scalar")
-        ctx.state = "scalar"
+        // valid beginning numeric characters
+        logger.trace("next state is numeric")
+        ctx.state = "numeric"
       } else if (/[a-zA-Z_]/.test(next)) {
         // valid beginning identifier characters
         logger.trace("next state is identifier")
@@ -109,9 +111,9 @@ function* consume(prog: string) {
       }
     }
 
-    if (ctx.state === "scalar") {
+    if (ctx.state === "numeric") {
       if (/[0-9]/.test(next)) {
-        logger.trace("encountered valid scalar character")
+        logger.trace("encountered valid numeric character")
         ctx.cur += next
         token = { kind: ctx.state, value: ctx.cur }
 
@@ -122,12 +124,12 @@ function* consume(prog: string) {
 
       if (next === ".") {
         if (ctx.cur.includes(".")) {
-          const err = new errors.InvalidShorthandTokenError("invalid scalar")
+          const err = new errors.InvalidShorthandTokenError("invalid numeric")
           logger.error({ err }, err.message)
           throw err
         }
 
-        logger.trace("encountered valid scalar character")
+        logger.trace("encountered valid numeric character")
         ctx.cur += next
         token = { kind: ctx.state, value: ctx.cur }
         i++
@@ -136,7 +138,7 @@ function* consume(prog: string) {
 
       token = { kind: ctx.state, value: ctx.cur }
 
-      // we have exited the context of a scalar, so just restart this loop and reconsider the char
+      // we have exited the context of a numeric, so just restart this loop and reconsider the char
       yield done()
       continue
     }
@@ -172,7 +174,7 @@ function* consume(prog: string) {
     if (ctx.state === "whitespace") {
       if (/\s/.test(next)) {
         ctx.cur += next
-        token = { kind: ctx.state }
+        token = { kind: ctx.state, value: " " }
         i++
         continue
       }
@@ -198,8 +200,8 @@ function* consume(prog: string) {
   return null
 }
 
-export function tokenize(prog: string): Token[] {
-  const logger = _logger.child({ component: "shorthand", method: "~tokenize" })
+export function lex(prog: string): Token[] {
+  const logger = _logger.child({ package: "shorthand", "component": "lexer", method: "~lex" })
   logger.trace("starting")
 
   const tokens: Token[] = []
@@ -211,30 +213,3 @@ export function tokenize(prog: string): Token[] {
   logger.trace("done")
   return tokens
 }
-
-// AST parsing
-// interface NumberScalar {
-//   kind: "scalar"
-//   value: number
-// }
-
-// interface BinaryExpression {
-//   kind: "binary expression"
-//   lh: ASTNode
-//   rh: ASTNode
-//   operation: string
-// }
-
-// type ASTNode = Identifier | NumberScalar | BinaryExpression
-
-// function group(x: string) {
-
-// }
-
-// function parse(x: string) {
-
-// }
-
-// function evaluate(tree: ASTNode) {
-
-// }

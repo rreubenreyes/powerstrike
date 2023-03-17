@@ -1,20 +1,20 @@
-import * as shorthand from "./shorthand"
+import * as lexer from "./lexer"
 
-describe("parser~parse", () => {
+describe("lexer~lex", () => {
   interface Test {
     name: string,
     args: string,
-    want?: shorthand.Token[],
+    want?: lexer.Token[],
     wantErr: boolean,
   }
 
-  const fn = shorthand.tokenize
+  const fn = lexer.lex
   const tests: Test[] = [
     {
       name: "whitespace: single whitespace produces one token",
       args: " ",
       want: [
-        { kind: "whitespace" },
+        { kind: "whitespace", value: " " },
       ],
       wantErr: false,
     },
@@ -22,24 +22,24 @@ describe("parser~parse", () => {
       name: "whitespace: many consecutive whitespace produces one token",
       args: "   ",
       want: [
-        { kind: "whitespace" },
+        { kind: "whitespace", value: " " },
       ],
       wantErr: false,
     },
     {
-      name: "scalar: valid scalars",
+      name: "numeric: valid numerics",
       args: "1 0.1 .1",
       want: [
-        { kind: "scalar", value: "1" },
-        { kind: "whitespace" },
-        { kind: "scalar", value: "0.1" },
-        { kind: "whitespace" },
-        { kind: "scalar", value: ".1" },
+        { kind: "numeric", value: "1" },
+        { kind: "whitespace", value: " " },
+        { kind: "numeric", value: "0.1" },
+        { kind: "whitespace", value: " " },
+        { kind: "numeric", value: ".1" },
       ],
       wantErr: false,
     },
     {
-      name: "scalar: float with too many decimals",
+      name: "numeric: float with too many decimals",
       args: "1.1.1",
       wantErr: true,
     },
@@ -48,11 +48,11 @@ describe("parser~parse", () => {
       args: "Aardvark aardvark _aardvark Hello_world-",
       want: [
         { kind: "identifier", value: "Aardvark" },
-        { kind: "whitespace" },
+        { kind: "whitespace", value: " " },
         { kind: "identifier", value: "aardvark" },
-        { kind: "whitespace" },
+        { kind: "whitespace", value: " " },
         { kind: "identifier", value: "_aardvark" },
-        { kind: "whitespace" },
+        { kind: "whitespace", value: " " },
         { kind: "identifier", value: "Hello_world-" },
       ],
       wantErr: false,
