@@ -1,8 +1,6 @@
 import * as parser from "./parser"
 import type * as lexer from "./lexer"
 
-const { TEST_ONLY } = process.env
-
 describe("parser~parse", () => {
   interface Test {
     name: string,
@@ -20,6 +18,7 @@ describe("parser~parse", () => {
       wantErr: false,
     },
     {
+      // 2
       name: "single literal",
       args: [{ kind: "numeric", value: "2" }],
       want: {
@@ -31,6 +30,7 @@ describe("parser~parse", () => {
       wantErr: false,
     },
     {
+      // hello
       name: "single identifier",
       args: [{ kind: "identifier", value: "hello" }],
       want: {
@@ -41,11 +41,13 @@ describe("parser~parse", () => {
       wantErr: false,
     },
     {
+      // +
       name: "standalone operator",
       args: [{ kind: "operator", value: "+" }],
       wantErr: true,
     },
     {
+      // -2
       name: "unary_op: single expression",
       args: [
         { kind: "operator", value: "-" },
@@ -59,6 +61,7 @@ describe("parser~parse", () => {
       wantErr: false,
     },
     {
+      // -
       name: "unary_op: unterminated",
       args: [
         { kind: "operator", value: "-" },
@@ -66,6 +69,7 @@ describe("parser~parse", () => {
       wantErr: true,
     },
     {
+      // 2 + 2
       name: "binary_op: single expression",
       args: [
         { kind: "numeric", value: "2" },
@@ -81,6 +85,7 @@ describe("parser~parse", () => {
       wantErr: false,
     },
     {
+      // 2 +
       name: "binary_op: unterminated expression",
       args: [
         { kind: "numeric", value: "2" },
@@ -89,6 +94,7 @@ describe("parser~parse", () => {
       wantErr: true,
     },
     {
+      // (2 + 2)
       name: "binary_op: single expression in parens",
       args: [
         { kind: "delimiter", value: "(" },
@@ -106,6 +112,7 @@ describe("parser~parse", () => {
       wantErr: false,
     },
     {
+      // ((2 + 2))
       name: "binary_op: nested groups are valid",
       args: [
         { kind: "delimiter", value: "(" },
