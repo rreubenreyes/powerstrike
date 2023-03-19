@@ -22,6 +22,12 @@ interface Identifier {
   ref: string
 }
 
+interface UnaryOp {
+  kind: "unary_op"
+  op: string
+  operand: ASTNode
+}
+
 interface BinaryOp {
   kind: "binary_op"
   lh: ASTNode
@@ -32,89 +38,122 @@ interface BinaryOp {
 export type ASTNode = (
   Literal
   | Identifier
+  | UnaryOp
   | BinaryOp
   | List
 )
 
-type Context = "declaration" | "expression"
-
 interface Queue<T> {
-  done(): boolean
-  cur(): T
-  advance(amt?: number): T
-  peek(amt?: number): T
+  cur(): T | undefined
+  advance(amt?: number): T | undefined
+  peek(amt?: number): T | undefined
 }
 
 function createQueue<T>(arr: T[]): Queue<T> {
-  const logger = _logger.child({ package: "shorthand", component: "parser", instanceOf: "Queue" })
-  function done() {
-    return arr.length === 0
-  }
-
-  function cur() {
-    // logger.trace({ size: arr.length }, "getting current item")
+  function cur(): T | undefined {
     return arr[0]
   }
 
-  function advance(amt = 1) {
-    // logger.trace({ size: arr.length }, "advancing")
-    let next
+  function advance(amt = 1): T | undefined {
     for (let i = 0; i < amt; i++) {
-      next = arr.shift()
+      arr.shift()
     }
 
-    if (next === undefined) {
-      logger.trace("queue is done, will throw")
-      throw new errors.ImplementationError("queue is done")
-    }
-
-    return next
+    return cur()
   }
 
-  function peek(amt = 1) {
-    // logger.trace({ size: arr.length }, "peeking")
-
+  function peek(amt = 1): T | undefined {
     const next = arr[amt]
-    // if (next === undefined) {
-    //   logger.trace("queue is done, will throw")
-    //   throw new errors.ImplementationError("queue is done")
-    // }
 
     return next
   }
 
-  return { done, cur, advance, peek }
+  return { cur, advance, peek }
+}
+
+function isUnaryOpSequence(t: Queue<lexer.Token>): boolean {
+  const cur = t.cur()
+  const next = t.peek()
+  const validUnaryOps = ["-"]
+
+  return Boolean(
+    (cur && (cur.kind === "operator" && validUnaryOps.includes(cur.value)))
+    && (next && (next.kind === "identifier" || next.kind === "numeric"))
+  )
 }
 
 // <term> ::= <term> ("*" | "/") <term> | <declaration>
-function parseTerm(t: Queue<lexer.Token>): ASTNode {
+function parseTerm(t: Queue<lexer.Token>, sibling?: ASTNode): ASTNode {
   const logger = _logger.child({ package: "shorthand", component: "parser", method: "#parseTerm" })
   logger.trace("starting")
 
-  if (t.done()) {
+  const curToken = t.cur()
+  if (!curToken) {
     logger.trace("no more tokens, will throw")
     const err = new errors.ParsingError("invalid expression")
     logger.error({ err }, err.message)
+
+    throw err
   }
 
+  logger.trace({ cur: curToken }, "token is present")
+
   let term: ASTNode
-  if (t.cur().kind === "identifier") {
-    logger.trace({ cur: t.cur() }, "token is identifier")
+  if (curToken.kind === "identifier") {
+    logger.trace({ cur: curToken }, "token is identifier")
     // <term> ::= <identifier>
     term = {
       kind: "identifier",
-      raw: t.cur().value,
-      ref: t.cur().value,
+      raw: curToken.value,
+      ref: curToken.value,
     }
-  } else {
+  } else if (curToken.kind === "numeric") {
     logger.trace({ cur: t.cur() }, "token is literal")
     // <term> ::= <literal>
     term = {
       kind: "literal",
       literal: "number",
-      raw: t.cur().value,
-      value: Number(t.cur().value),
+      raw: curToken.value,
+      value: Number(curToken.value),
     }
+  } else if (curToken.kind === "delimiter") {
+    if (curToken.value === "(") {
+      // <term> ::= "("
+      logger.trace({ cur: curToken, sibling }, "found grouped expression")
+      term = parseDeclaration(t)
+    } else if (curToken.value === ")") {
+      // <term> ::= ")"
+      if (!sibling) {
+        const err = new errors.ParsingError("unexpected token")
+        logger.error({ err, curToken }, err.message)
+        throw err
+      }
+
+      logger.trace({ cur: curToken, sibling }, "just parsed grouped expression, next operator is valid")
+      term = sibling
+    } else {
+      const err = new errors.ParsingError("unexpected token")
+      logger.error({ err, curToken }, err.message)
+
+      throw err
+    }
+  } else if (isUnaryOpSequence(t)) {
+    // <term> ::= <unary_op>
+    logger.trace({ cur: t.cur() }, "next term is unary op sequence")
+    const operand = curToken.value
+    t.advance()
+    const nextTerm = parseTerm(t)
+
+    term = {
+      kind: "unary_op",
+      op: operand,
+      operand: nextTerm,
+    }
+  } else {
+    const err = new errors.ParsingError("unexpected token")
+    logger.error({ err, curToken }, err.message)
+
+    throw err
   }
 
   let next = t.peek()
@@ -138,30 +177,33 @@ function parseTerm(t: Queue<lexer.Token>): ASTNode {
       rh: nextTerm,
     }
 
-    if (!t.done()) {
-      next = t.peek()
-    }
+    next = t.peek()
   }
-  logger.trace("no more operators, returning term")
+  logger.trace({ node: term }, "no more operators, returning expression")
 
   logger.trace("done")
   return term
 }
 
 // <exp> ::= <exp> ("+" | "-") <exp> | <term>
-function parseExpression(t: Queue<lexer.Token>): ASTNode {
+function parseExpression(t: Queue<lexer.Token>, sibling?: ASTNode): ASTNode {
   const logger = _logger.child({ package: "shorthand", component: "parser", method: "#parseExpression" })
   logger.trace("starting")
 
-  if (t.done()) {
+  const curToken = t.cur()
+  if (!curToken) {
     logger.trace("no more tokens, will throw")
     const err = new errors.ParsingError("invalid expression")
     logger.error({ err }, err.message)
+
+    throw err
   }
 
+  logger.trace({ cur: curToken }, "token is present")
+
   // <exp> ::= <term>
-  logger.trace("parsing term")
-  let expr: ASTNode = parseTerm(t)
+  logger.trace({ cur: curToken }, "parsing term")
+  let expr: ASTNode = parseTerm(t, sibling)
   logger.trace({ expr }, "parsed term")
 
   let next = t.peek()
@@ -178,7 +220,7 @@ function parseExpression(t: Queue<lexer.Token>): ASTNode {
     // if next token is an add/subtract operator, this is a binary operation,
     // so recurse until we can construct a binary_op node
     t.advance(2)
-    nextExpression = parseTerm(t)
+    nextExpression = parseTerm(t, sibling)
     expr = {
       kind: "binary_op",
       op: next.value,
@@ -186,47 +228,63 @@ function parseExpression(t: Queue<lexer.Token>): ASTNode {
       rh: nextExpression,
     }
 
-    if (!t.done()) {
-      next = t.peek()
-    }
+    next = t.peek()
   }
-  logger.trace("no more operators, returning expression")
+  logger.trace({ node: expr }, "no more operators, returning expression")
 
   logger.trace("done")
   return expr
 }
 
-// <declaration> ::= "(" <exp> ")" | <literal> | <identifier>
+// <declaration> ::= "(" <exp> ")" | <unary_op> | <literal> | <identifier>
 function parseDeclaration(t: Queue<lexer.Token>): ASTNode {
   const logger = _logger.child({ package: "shorthand", component: "parser", method: "#parseDeclaration" })
   logger.trace("starting")
 
-  if (t.done()) {
+  let curToken = t.cur()
+  if (!curToken) {
     logger.trace("no more tokens, will throw")
     const err = new errors.ParsingError("invalid expression")
     logger.error({ err }, err.message)
+
+    throw err
   }
 
-  let next = t.cur()
-  if (next.kind === "delimiter" && next.value === "(") {
-    logger.trace("found grouped declaration")
+  logger.trace({ cur: curToken }, "token is present")
+
+  if (curToken.kind === "delimiter" && curToken.value === "(") {
     // <declaration> ::= "(" <exp> ")"
+    logger.trace({ cur: curToken }, "found grouped expression")
+    curToken = t.advance()
+    logger.trace({ cur: curToken }, "grouped expression: found expression, parsing")
     const expr = parseExpression(t)
-    next = t.advance()
-    if (next.kind === "delimiter" && next.value === ")") {
-      throw new errors.ParsingError("invalid declaration")
+
+    curToken = t.advance()
+    logger.trace({ cur: curToken }, "grouped expression: looking for close paren")
+    if (curToken && curToken.kind !== "delimiter" && curToken.value !== ")") {
+      const err = new errors.ParsingError("invalid expression: unterminated group")
+      logger.error({ err, cur: curToken }, err.message)
+
+      throw err
     }
 
-    return expr
+    logger.trace("grouped expression: advancing past close paren")
+
+    return parseExpression(t, expr)
   }
-  if (next.kind === "numeric") {
-    logger.trace({ next }, "token is numeric")
+  if (curToken.kind === "numeric") {
     // <declaration> ::= <literal>
+    logger.trace({ cur: curToken }, "token is numeric")
     return parseExpression(t)
   }
-  if (next.kind === "identifier") {
-    logger.trace({ next }, "token is identifier")
+  if (curToken.kind === "identifier") {
     // <declaration> ::= <identifier>
+    logger.trace({ cur: curToken }, "token is identifier")
+    return parseExpression(t)
+  }
+  if (isUnaryOpSequence(t)) {
+    // <declaration> ::= <unary_op>
+    logger.trace({ cur: curToken, next: t.peek() }, "found unary op sequence")
     return parseExpression(t)
   }
 
@@ -238,7 +296,7 @@ export function parse(tokens: lexer.Token[]): ASTNode | null {
   logger.trace("starting")
 
   const q = createQueue(tokens.filter((t) => t.kind !== "whitespace"))
-  if (q.done()){
+  if (!q.cur()){
     logger.trace("empty program")
     return null
   }
