@@ -21,11 +21,6 @@ interface Operator {
   value: string
 }
 
-interface Ambiguous {
-  kind: "ambiguous"
-  value: string
-}
-
 interface Whitespace {
   kind: "whitespace"
   value: string,
@@ -37,7 +32,6 @@ export type Token = (
   | Delimiter
   | Whitespace
   | Operator
-  | Ambiguous
 )
 
 interface Context {
@@ -47,7 +41,6 @@ interface Context {
 
 function* consume(prog: string) {
   let logger = _logger.child({ package: "shorthand", "component": "lexer", method: "#consume" })
-  logger.trace("starting")
 
   const ctx: Context = {
     state: "unidentified",
@@ -64,10 +57,6 @@ function* consume(prog: string) {
 
     logger.trace({ ctx }, "reset context")
 
-    if (token.kind === "identifier" && token.value === "x") {
-      logger.trace({ ctx }, "token is single `x`, returning `ambiguous`")
-      token = { kind: "ambiguous", value: "x" }
-    }
     return token
   }
 
@@ -107,7 +96,7 @@ function* consume(prog: string) {
         i++
         continue
       } else {
-        throw new errors.InvalidShorthandTokenError("invalid token")
+        throw new errors.InvalidTokenError(`invalid token at position: ${i}`)
       }
     }
 
@@ -124,7 +113,7 @@ function* consume(prog: string) {
 
       if (next === ".") {
         if (ctx.cur.includes(".")) {
-          const err = new errors.InvalidShorthandTokenError("invalid numeric")
+          const err = new errors.InvalidTokenError(`invalid numeric at position: ${i}`)
           logger.error({ err }, err.message)
           throw err
         }
@@ -184,7 +173,7 @@ function* consume(prog: string) {
       continue
     }
 
-    const err = new errors.InvalidShorthandTokenError("invalid token")
+    const err = new errors.InvalidTokenError(`invalid token at position: ${i}`)
     logger.error({ err }, err.message)
     throw err
   }
@@ -196,20 +185,19 @@ function* consume(prog: string) {
     logger.trace("no more chars, no final token to yield")
   }
 
-  logger.trace("done")
+  logger.trace("no more tokens")
   return null
 }
 
 export function lex(prog: string): Token[] {
   const logger = _logger.child({ package: "shorthand", "component": "lexer", method: "~lex" })
-  logger.trace("starting")
+  logger.trace("tokenizing")
 
   const tokens: Token[] = []
   for (const token of consume(prog)) {
-    logger.trace({ token }, "consumed token")
     tokens.push(token)
   }
 
-  logger.trace("done")
+  logger.trace({ tokens }, "processed all tokens")
   return tokens
 }

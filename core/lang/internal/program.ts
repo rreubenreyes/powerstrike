@@ -6,7 +6,6 @@ export interface Defaults {
   shorthand: {
     enabled: boolean
     setsBeforeReps: boolean
-    repsBeforeSets: boolean
   }
 }
 
@@ -15,9 +14,19 @@ export interface DeclaredExercise {
   rendersAs: string
 }
 
-interface EvaluatedStatement {
-  kind: "evaluated"
-  definition: string
+export interface TemplatedExercise {
+  name: string
+  definition: {
+    weight: number
+    sets: number
+    reps: number
+    rpe?: number
+  }
+}
+
+interface ShorthandStatement {
+  kind: "shorthand"
+  value: string
 }
 
 interface LiteralStatement {
@@ -25,7 +34,7 @@ interface LiteralStatement {
   value: unknown
 }
 
-export type Statement = EvaluatedStatement | LiteralStatement
+export type Statement = ShorthandStatement | LiteralStatement
 
 interface Session {
   name: string
@@ -63,7 +72,6 @@ export function defaultDefaults(): Defaults {
     shorthand: {
       enabled: true,
       setsBeforeReps: true,
-      repsBeforeSets: false,
     }
   }
 }

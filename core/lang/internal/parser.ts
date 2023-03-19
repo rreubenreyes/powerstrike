@@ -49,11 +49,6 @@ function parseDefaults(record: unknown): program.Defaults {
     }
     shorthand.setsBeforeReps = record.shorthand.sets_before_reps
 
-    if (typeof record.shorthand.reps_before_sets !== "boolean") {
-      throw new errors.SyntaxError("invalid defaults:shorthand:reps_before_sets - expected bool")
-    }
-    shorthand.repsBeforeSets = record.shorthand.reps_before_sets
-
     dd.shorthand = shorthand
   }
 

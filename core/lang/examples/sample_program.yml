@@ -12,7 +12,7 @@ defaults:
     # aliases:
     #   - exercises:has
     properties:
-      - starting weight
+      -_starting_weight
 
     # exercises:shorthand configures the use of shorthand expressions.
     # special expressions which allow programs to be written more concisely.
@@ -71,16 +71,16 @@ templates:
     # If a member of templates[]:inputs is specified as a string, then the defaults are:
     #   - type: number
     inputs:
-      - squat increment
-      - squat starting weight
-      - bench increment
-      - bench starting weight
-      - deadlift increment
-      - deadlift starting weight
-      - ohp increment
-      - ohp starting weight
-      - row increment
-      - row starting weight
+      - squat_increment
+      - squat_starting_weight
+      - bench_increment
+      - bench_starting_weight
+      - deadlift_increment
+      - deadlift_starting_weight
+      - ohp_increment
+      - ohp_starting_weight
+      - row_increment
+      - row_starting_weight
 
     outputs:
       - squat ending weight
@@ -113,7 +113,7 @@ templates:
                     # std::input references the encompassing template.
                     # The use of std::input is only valid in the context of a template.
                     - !input squat input weight
-                    - !input squat increment
+                    - !input squat_increment
               sets: 5
               reps: 5
 
@@ -126,7 +126,7 @@ templates:
                 # std::sum.
                 std::sum:
                   - !input bench input weight
-                  - !input bench increment
+                  - !input bench_increment
               sets: 5
               reps: 5
 
@@ -135,7 +135,7 @@ templates:
               weight: !evaluate >
                 sum(
                   input("row input weight"),
-                  input("row increment"),
+                  input("row_increment"),
                 )
               sets: 5
               reps: 5
@@ -147,9 +147,9 @@ templates:
           #
           # The explicit !shorthand tag is not needed if defaults:exercises:shorthand:enabled
           # is set.
-          - squat: !shorthand (squat starting weight + squat increment)x5x5
-          - ohp: (ohp starting weight + ohp increment)x5x5
-          - deadlift: (deadlift starting weight + deadlift increment)x5x5
+          - squat: !shorthand (squat_starting_weight + squat_increment):5:5
+          - ohp: (ohp_starting_weight + ohp_increment)x5x5
+          - deadlift: (deadlift_starting_weight + deadlift_increment):5:5
 
       - name: C
         exercises:
@@ -158,96 +158,96 @@ templates:
           #
           # The explicit !shorthand tag is not needed if defaults:exercises:shorthand:enabled
           # is set.
-          - squat: (squat starting weight + (2 * squat increment))x5x5
-          - ohp: (ohp starting weight + ohp increment + 2.5)x5x5
-          - row: (row starting weight + row increment + 2.5)x5x5
+          - squat: (squat_starting_weight + (2 * squat_increment)):5:5
+          - ohp: (ohp_starting_weight + ohp_increment + 2.5):5:5
+          - row: (row_starting_weight + row_increment + 2.5):5:5
 
   - name: Week B
     renders as: Week B
     inputs:
-      - squat increment
-      - squat starting weight
-      - bench increment
-      - bench starting weight
-      - deadlift increment
-      - deadlift starting weight
-      - ohp increment
-      - ohp starting weight
-      - row increment
-      - row starting weight
+      - squat__increment
+      - squat_starting_weight
+      - bench__increment
+      - bench_starting_weight
+      - deadlift__increment
+      - deadlift_starting_weight
+      - ohp__increment
+      - ohp_starting_weight
+      - row__increment
+      - row_starting_weight
     sessions:
       - name: A
         exercises:
-          - squat: (squat starting weight)x5x5
-          - ohp: (ohp starting weight)x5x5
-          - deadlift: (deadlift starting weight)x5x5
+          - squat: (squat_starting_weight):5:5
+          - ohp: (ohp_starting_weight):5:5
+          - deadlift: (deadlift_starting_weight):5:5
 
       - name: B
         exercises:
-          - squat: (squat starting weight + squat increment)x5x5
-          - bench: (bench starting weight)x5x5
-          - row: (row starting weight)x5x5
+          - squat: (squat_starting_weight + squat_increment):5:5
+          - bench: (bench_starting_weight):5:5
+          - row: (row_starting_weight):5:5
 
       - name: C
         exercises:
-          - squat: (squat starting weight + (2 * squat increment))x5x5
-          - ohp: (ohp starting weight + ohp increment)x5x5
-          - deadlift: (deadlift starting weight + deadlift increment)x5x5
+          - squat: (squat_starting_weight + (2 * squat_increment)):5:5
+          - ohp: (ohp_starting_weight + ohp_increment):5:5
+          - deadlift: (deadlift_starting_weight + deadlift_increment):5:5
 
 schedule:
   blocks:
     - name: Week 1
       template: Week A
       inputs:
-        - squat starting weight: 60
-        - squat increment: 5
+        - squat_starting_weight: 60
+        - squat_increment: 5
 
-        - bench starting weight: 20
-        - bench increment: 2.5
+        - bench_starting_weight: 20
+        - bench_increment: 2.5
 
-        - deadlift starting weight: 60
-        - deadlift increment: 5
+        - deadlift_starting_weight: 60
+        - deadlift_increment: 5
 
-        - ohp starting weight: 20
-        - ohp increment: 2.5
+        - ohp_starting_weight: 20
+        - ohp_increment: 2.5
 
-        - row starting weight: 20
-        - row increment: 2.5
+        - row_starting_weight: 20
+        - row_increment: 2.5
     - name: Week 2
       template: Week B
       inputs:
-        - squat starting weight: !evaluate >
+        - squat_starting_weight: !evaluate >
             output(
               block("Week 1"),
               "squat ending weight"
             ) + 5
-        - squat increment: 5
+        - squat_increment: 5
 
-        - bench starting weight: !evaluate >
+        - bench_starting_weight: !evaluate >
             output(
               block("Week 1"),
               "bench ending weight"
             ) + 5
-        - bench increment: 2.5
+        - bench_increment: 2.5
 
-        - deadlift starting weight: !evaluate >
+        - deadlift_starting_weight: !evaluate >
             output(
               block("Week 1"),
               "deadlift ending weight"
             ) + 5
-        - deadlift increment: 5
+        - deadlift_increment: 5
 
-        - ohp starting weight: !evaluate >
+        - ohp_starting_weight: !evaluate >
             output(
               block("Week 1"),
               "ohp ending weight"
             ) + 5
-        - ohp increment: 2.5
+        - ohp_increment: 2.5
 
-        - row starting weight: !evaluate >
+        - row_starting_weight: !evaluate >
             output(
               block("Week 1"),
               "row ending weight"
             ) + 5
-        - row increment: 2.5
+        - row_increment: 2.5
 

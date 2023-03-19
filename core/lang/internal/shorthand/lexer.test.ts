@@ -79,14 +79,6 @@ describe("lexer~lex", () => {
       wantErr: false,
     },
     {
-      name: "ambiguous",
-      args: "x",
-      want: [
-        { kind: "ambiguous", value: "x" },
-      ],
-      wantErr: false,
-    },
-    {
       name: "unsupported token",
       args: "%",
       wantErr: true,

@@ -5,31 +5,48 @@ import type * as parser from "./parser"
 type LinksMap = Record<string, number>
 
 function linkIdentifiers(identifiers: { name: string, value: number }[]) {
-  const logger = _logger.child({ package: "shorthand", component: "evaluate", method: "#linkIdentifiers" })
-  logger.debug({ identifiers }, "linking identifiers")
+  const logger = _logger.child({
+    package: "shorthand",
+    component: "evaluate",
+    method: "#linkIdentifiers"
+  })
+
+  logger.trace({ identifiers }, "linking identifiers")
 
   const links = identifiers.reduce<LinksMap>((links, cur) => {
     if (links[cur.name]) {
-      throw new errors.UserCodeError(`duplicate identifier ${cur.name}`)
+      const err = new errors.UserCodeError(`duplicate identifier ${cur.name}`)
+      logger.error({ err }, err.message)
+
+      throw err
     }
 
     links[cur.name] = cur.value
     return links
   }, {})
 
-  logger.debug({ links }, "linked identifiers")
+  logger.trace({ links }, "linked identifiers")
   return links
 }
 
 function walk(root: parser.ASTNode, links: LinksMap) {
-  const logger = _logger.child({ package: "shorthand", component: "evaluate", method: "#walk" })
-  logger.trace("starting")
+  const logger = _logger.child({
+    package: "shorthand",
+    component: "evaluate",
+    method: "#walk",
+    node: root,
+  })
+
+  logger.trace("walking AST")
 
   let result: number
+
   if (root.kind === "unary_op") {
     if (root.op === "-") {
       const operand = walk(root.operand, links)
       result = -operand
+
+      logger.trace({ result }, "resolved value")
       return result
     }
 
@@ -42,7 +59,7 @@ function walk(root: parser.ASTNode, links: LinksMap) {
 
       result = lh + rh
 
-      logger.debug({ result }, "done")
+      logger.trace({ result }, "resolved value")
       return result
     }
     if (root.op === "-") {
@@ -51,7 +68,7 @@ function walk(root: parser.ASTNode, links: LinksMap) {
 
       result = lh - rh
 
-      logger.debug({ result }, "done")
+      logger.trace({ result }, "resolved value")
       return result
     }
     if (root.op === "*") {
@@ -60,7 +77,7 @@ function walk(root: parser.ASTNode, links: LinksMap) {
 
       result = lh * rh
 
-      logger.debug({ result }, "done")
+      logger.trace({ result }, "resolved value")
       return result
     }
     if (root.op === "/") {
@@ -69,7 +86,7 @@ function walk(root: parser.ASTNode, links: LinksMap) {
 
       result = lh / rh
 
-      logger.debug({ result }, "done")
+      logger.trace({ result }, "resolved value")
       return result
     }
 
@@ -77,7 +94,7 @@ function walk(root: parser.ASTNode, links: LinksMap) {
   }
   if (root.kind === "literal") {
     const result = root.value
-    logger.debug({ result }, "done")
+    logger.trace({ result }, "resolved value")
 
     return result
   }
@@ -90,7 +107,7 @@ function walk(root: parser.ASTNode, links: LinksMap) {
     }
 
     const result = links[root.ref]
-    logger.debug({ result }, "done")
+    logger.trace({ result }, "resolved value")
 
     return result
   }
@@ -100,12 +117,12 @@ function walk(root: parser.ASTNode, links: LinksMap) {
 
 export function evaluate(ast: parser.ASTNode, identifiers: { name: string, value: number }[]): number {
   const logger = _logger.child({ package: "shorthand", component: "evaluate", method: "~evaluate" })
-  logger.trace("starting")
+  logger.trace("evaluating AST")
 
   const links = linkIdentifiers(identifiers)
 
   const result = walk(ast, links)
 
-  logger.trace("done")
+  logger.trace({ result }, "done")
   return result
 }

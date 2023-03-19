@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import pkg from "./package.json"
 import type Bunyan from "bunyan"
 

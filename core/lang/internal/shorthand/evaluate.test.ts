@@ -12,7 +12,6 @@ describe("eval~evaluate", () => {
   const fn = evaluate.evaluate
   const tests: Test[] = [
     {
-      // 2
       name: "single literal",
       args: [{
         kind: "literal",
@@ -24,7 +23,6 @@ describe("eval~evaluate", () => {
       wantErr: false,
     },
     {
-      // hello
       name: "identifiers: single identifier",
       args: [
         {
@@ -38,7 +36,6 @@ describe("eval~evaluate", () => {
       wantErr: false,
     },
     {
-      // hello
       name: "identifiers: invalid indentifier",
       args: [
         {
@@ -66,7 +63,6 @@ describe("eval~evaluate", () => {
       wantErr: true,
     },
     {
-      // -2
       name: "unary_op: negation",
       args: [
         {
@@ -80,7 +76,6 @@ describe("eval~evaluate", () => {
       wantErr: false,
     },
     {
-      // -2
       name: "unary_op: invalid",
       args: [
         {
@@ -93,7 +88,6 @@ describe("eval~evaluate", () => {
       wantErr: true,
     },
     {
-      // -2
       name: "binary_op: invalid",
       args: [
         {
@@ -107,7 +101,6 @@ describe("eval~evaluate", () => {
       wantErr: true,
     },
     {
-      // -2
       name: "binary op: order of operations",
       args: [
         {
