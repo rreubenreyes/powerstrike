@@ -5,7 +5,7 @@ describe("shorthand~resolve", () => {
   interface Test {
     name: string,
     args: [program.Defaults["shorthand"], string, { name: string, value: number }[]?],
-    want?: program.TemplatedExercise["definition"]
+    want?: program.ExplicitExercise,
     wantErr: boolean,
   }
 
@@ -15,7 +15,7 @@ describe("shorthand~resolve", () => {
       name: "can resolve identifiers",
       args: [
         { enabled: true, setsBeforeReps: true },
-        "(squat_starting_weight + squat_increment * 2):(rx_sets):(rx_reps)@rpe",
+        "(squat_starting_weight + squat_increment * 2) : rx_sets : rx_reps @ rpe",
         [
           { name: "squat_starting_weight", value: 225 },
           { name: "squat_increment", value: 10 },

@@ -11,23 +11,22 @@ export interface Defaults {
 
 export interface DeclaredExercise {
   name: string
-  rendersAs: string
+  alias: string
 }
 
-export interface TemplatedExercise {
-  name: string
-  definition: {
-    weight: number
-    sets: number
-    reps: number
-    rpe?: number
-  }
+export interface ExplicitExercise {
+  weight: number
+  sets: number
+  reps: number
+  rpe?: number
 }
 
 interface ShorthandStatement {
   kind: "shorthand"
   value: string
 }
+
+export type TemplatedExercise = ExplicitExercise | ShorthandStatement
 
 interface LiteralStatement {
   kind: "literal"
@@ -36,31 +35,39 @@ interface LiteralStatement {
 
 export type Statement = ShorthandStatement | LiteralStatement
 
-interface Session {
+export interface Session {
   name: string
-  exercises: Record<string, {
-    weight: Statement
-    sets: Statement
-    reps: Statement
-  }>[]
+  exercises: TemplatedExercise[]
 }
 
 export interface Template {
   name: string
-  rendersAs: string
+  alias: string
   inputs: string[]
-  outputs: string[]
+  // outputs: string[]
   sessions: Session[]
 }
 
-interface Block {
+export interface Block {
   name: string
   template: string
-  inputs: Record<string, Statement>[]
+  inputs: { name: string, value: number }[]
 }
 
 export interface Schedule {
   blocks: Block[]
+}
+
+export interface RenderedProgram {
+  schedule: {
+    blocks: {
+      name: string
+      sessions: {
+        name: string
+        exercises: ExplicitExercise
+      }[]
+    }
+  }
 }
 
 export function defaultDefaults(): Defaults {

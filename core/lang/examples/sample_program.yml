@@ -83,10 +83,10 @@ templates:
       - row_starting_weight
 
     outputs:
-      - squat ending weight
-      - bench ending weight
-      - deadlift ending weight
-      - ohp ending weight
+      - squat_ending_weight
+      - bench_ending_weight
+      - deadlift_ending_weight
+      - ohp_ending_weight
       - row ending weight
 
     sessions:
@@ -165,15 +165,15 @@ templates:
   - name: Week B
     renders as: Week B
     inputs:
-      - squat__increment
+      - squat_increment
       - squat_starting_weight
-      - bench__increment
+      - bench_increment
       - bench_starting_weight
-      - deadlift__increment
+      - deadlift_increment
       - deadlift_starting_weight
-      - ohp__increment
+      - ohp_increment
       - ohp_starting_weight
-      - row__increment
+      - row_increment
       - row_starting_weight
     sessions:
       - name: A

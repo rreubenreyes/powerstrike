@@ -1,8 +1,8 @@
+import _logger from "../util/logger"
 import * as lexer from "./lexer"
 import * as parser from "./parser"
 import * as evaluate from "./evaluate"
 import * as errors from "../errors"
-import _logger from "../util/logger"
 import type * as program from "../program"
 
 function resolver(identifiers: { name: string, value: number }[] = []) {
@@ -91,7 +91,7 @@ export function resolve(
   opts: program.Defaults["shorthand"],
   prog: string,
   identifiers: { name: string, value: number }[] = [],
-): program.TemplatedExercise["definition"] {
+): program.ExplicitExercise {
   const logger = _logger.child({ package: "shorthand", method: "~resolve" })
   if (!opts.enabled) {
     const err = new errors.ShorthandNotAllowedError("can\'t resolve shorthand expression: config::shorthand::enabled is false")

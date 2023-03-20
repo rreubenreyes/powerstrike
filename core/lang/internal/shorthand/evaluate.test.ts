@@ -1,7 +1,7 @@
 import * as evaluate from "./evaluate"
 import type * as parser from "./parser"
 
-describe("eval~evaluate", () => {
+describe("evaluate~evaluate", () => {
   interface Test {
     name: string,
     args: [parser.ASTNode, { name: string, value: number }[]],
