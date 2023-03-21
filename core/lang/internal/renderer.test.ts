@@ -109,7 +109,7 @@ describe("shorthand~resolve", () => {
       wantErr: true,
     },
     {
-      name: "invalid declared exercises",
+      name: "invalid declared exercises: not a list",
       args: [`
         defaults:
           units: kilograms
@@ -119,6 +119,38 @@ describe("shorthand~resolve", () => {
               sets_before_reps: true
 
         exercises: invalid
+      `],
+      wantErr: true,
+    },
+    {
+      name: "invalid declared exercise name: not a string",
+      args: [`
+        defaults:
+          units: kilograms
+          exercises:
+            shorthand:
+              enabled: true
+              sets_before_reps: true
+
+        exercises:
+          - name: 2
+      `],
+      wantErr: true,
+    },
+    {
+      name: "invalid declared exercise property: not a number",
+      args: [`
+        defaults:
+          units: kilograms
+          exercises:
+            shorthand:
+              enabled: true
+              sets_before_reps: true
+
+        exercises:
+          - name: squat
+            alias: squat
+            prop: invalid
       `],
       wantErr: true,
     },
@@ -508,6 +540,33 @@ describe("shorthand~resolve", () => {
       wantErr: true,
     },
     {
+      name: "invalid template sessions - not a list of map",
+      args: [`
+        defaults:
+          units: kilograms
+          exercises:
+            shorthand:
+              enabled: true
+              sets_before_reps: true
+
+        exercises:
+          - name: squat
+            starting_weight: 225
+
+        templates:
+          - name: test
+            inputs:
+              - valid
+            sessions:
+              - invalid
+
+        schedule:
+          blocks:
+            - invalid
+      `],
+      wantErr: true,
+    },
+    {
       name: "invalid template session name - not a string",
       args: [`
         defaults:
@@ -527,6 +586,63 @@ describe("shorthand~resolve", () => {
               - valid
             sessions:
               - name: 2
+
+        schedule:
+          blocks:
+            - invalid
+      `],
+      wantErr: true,
+    },
+    {
+      name: "invalid templated exercises - not a list",
+      args: [`
+        defaults:
+          units: kilograms
+          exercises:
+            shorthand:
+              enabled: true
+              sets_before_reps: true
+
+        exercises:
+          - name: squat
+            starting_weight: 225
+
+        templates:
+          - name: test
+            inputs:
+              - valid
+            sessions:
+              - name: test
+                exercises: invalid
+
+        schedule:
+          blocks:
+            - invalid
+      `],
+      wantErr: true,
+    },
+    {
+      name: "invalid templated exercise - not a map",
+      args: [`
+        defaults:
+          units: kilograms
+          exercises:
+            shorthand:
+              enabled: true
+              sets_before_reps: true
+
+        exercises:
+          - name: squat
+            starting_weight: 225
+
+        templates:
+          - name: test
+            inputs:
+              - valid
+            sessions:
+              - name: test
+                exercises:
+                  - 2
 
         schedule:
           blocks:

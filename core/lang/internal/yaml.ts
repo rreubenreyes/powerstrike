@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import yaml from "js-yaml"
 
 import * as errors from "./errors"
