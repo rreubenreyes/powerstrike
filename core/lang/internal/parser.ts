@@ -439,7 +439,7 @@ export function parse(input: string): {
   logger.trace("parsing program")
 
   logger.trace("loading yaml")
-  const p = yaml.load(input, { schema: yamlUtils.schema }) || {}
+  const p = yaml.load(input, { schema: yamlUtils.schema })
   logger.trace(p, "loaded yaml")
 
   if (!reflect.isRecord(p)) {
