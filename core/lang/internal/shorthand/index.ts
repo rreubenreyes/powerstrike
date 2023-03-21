@@ -71,7 +71,7 @@ function resolver(identifiers: { name: string, value: number }[] = []) {
   function value() {
     if (!_weight || !_sets || !_reps) {
       const err = new errors.ImplementationError("unexpected missing shorthand part")
-      logger.error({ err }, err.message)
+      logger.fatal({ err }, err.message)
 
       throw err
     }
@@ -91,10 +91,10 @@ export function resolve(
   opts: program.Defaults["shorthand"],
   prog: string,
   identifiers: { name: string, value: number }[] = [],
-): program.ExplicitExercise {
+): program.RenderedExercise["definition"] {
   const logger = _logger.child({ package: "shorthand", method: "~resolve" })
   if (!opts.enabled) {
-    const err = new errors.ShorthandNotAllowedError("can\'t resolve shorthand expression: config::shorthand::enabled is false")
+    const err = new errors.ShorthandNotAllowedError("can\'t resolve shorthand expression: defaults:shorthand:enabled is false")
 
     logger.error({ err }, err.message)
     throw err
@@ -117,5 +117,26 @@ export function resolve(
     .value()
 
   logger.trace({ definition }, "resolved shorthand definition")
+
   return definition
+}
+
+export function resolveExpression(
+  prog: string,
+  identifiers: { name: string, value: number }[] = [],
+): number {
+  const logger = _logger.child({ package: "shorthand", method: "~resolveExpression" })
+
+  const tokens = lexer.lex(prog)
+  const ast = parser.parse(tokens)
+  if (ast === null) {
+    const err = new errors.UserCodeError("incomplete shorthand expression: missing weight")
+    logger.error({ err }, err.message)
+
+    throw err
+  }
+
+  const resolved = evaluate.evaluate(ast, identifiers)
+
+  return resolved
 }

@@ -19,17 +19,14 @@ import * as program from "./program"
 // })
 
 const shorthandType = new yaml.Type("!shorthand", {
-  kind: "mapping",
+  kind: "scalar",
   resolve: (data) => typeof data === "string",
-  construct: (data): program.Statement => {
+  construct: (data): program.ShorthandExercise["value"] => {
     if (typeof data !== "string") {
-      throw new errors.InvalidEvaluateType("!evaluate tags must be used with strings")
+      throw new errors.InvalidEvaluateType("!shorthand tags must be used with strings")
     }
 
-    return {
-      kind: "shorthand",
-      value: data
-    }
+    return data
   }
 })
 

@@ -5,7 +5,7 @@ describe("shorthand~resolve", () => {
   interface Test {
     name: string,
     args: [program.Defaults["shorthand"], string, { name: string, value: number }[]?],
-    want?: program.ExplicitExercise,
+    want?: program.RenderedExercise["definition"],
     wantErr: boolean,
   }
 

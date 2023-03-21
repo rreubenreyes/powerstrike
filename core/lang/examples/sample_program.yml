@@ -11,11 +11,6 @@ defaults:
     # default: []
     # aliases:
     #   - exercises:has
-    properties:
-      -_starting_weight
-
-    # exercises:shorthand configures the use of shorthand expressions.
-    # special expressions which allow programs to be written more concisely.
     shorthand:
       # exercises:shorthand:enabled enables the use of shorthand expressions.
       # without the use of explicit tags.

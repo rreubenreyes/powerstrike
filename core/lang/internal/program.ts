@@ -9,31 +9,43 @@ export interface Defaults {
   }
 }
 
-export interface DeclaredExercise {
-  name: string
-  alias: string
+interface Literal {
+  kind: "literal"
+  value: number
 }
 
-export interface ExplicitExercise {
-  weight: number
-  sets: number
-  reps: number
-  rpe?: number
-}
-
-interface ShorthandStatement {
+interface ShorthandExpression {
   kind: "shorthand"
   value: string
 }
 
-export type TemplatedExercise = ExplicitExercise | ShorthandStatement
+export type Statement = Literal | ShorthandExpression
 
-interface LiteralStatement {
-  kind: "literal"
-  value: unknown
+export interface DeclaredExercise {
+  name: string
+  alias: string
+  properties: Record<string, Literal>
 }
 
-export type Statement = ShorthandStatement | LiteralStatement
+export interface ExplicitExercise {
+  kind: "explicit"
+  name: string
+  definition: {
+    weight: Statement
+    sets: Statement
+    reps: Statement
+    rpe?: Statement
+  }
+}
+
+export interface ShorthandExercise {
+  kind: "shorthand"
+  name: string
+  alias?: string
+  value: string
+}
+
+export type TemplatedExercise = ExplicitExercise | ShorthandExercise
 
 export interface Session {
   name: string
@@ -51,22 +63,37 @@ export interface Template {
 export interface Block {
   name: string
   template: string
-  inputs: { name: string, value: number }[]
+  inputs: { name: string, value: Statement }[]
 }
 
 export interface Schedule {
   blocks: Block[]
 }
 
+export interface RenderedExercise {
+  name: string
+  alias: string
+  definition: {
+    weight: number
+    sets: number
+    reps: number
+    rpe?: number
+  }
+}
+
+export interface RenderedSession {
+  name: string
+  exercises: RenderedExercise[]
+}
+
+export interface RenderedBlock {
+  name: string
+  sessions: RenderedSession[]
+}
+
 export interface RenderedProgram {
   schedule: {
-    blocks: {
-      name: string
-      sessions: {
-        name: string
-        exercises: ExplicitExercise
-      }[]
-    }
+    blocks: RenderedBlock[]
   }
 }
 

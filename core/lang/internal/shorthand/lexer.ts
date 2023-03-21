@@ -71,7 +71,7 @@ function* consume(prog: string) {
         // valid beginning numeric characters
         logger.trace("next state is numeric")
         ctx.state = "numeric"
-      } else if (/[a-zA-Z_]/.test(next)) {
+      } else if (/[a-zA-Z_\.]/.test(next)) {
         // valid beginning identifier characters
         logger.trace("next state is identifier")
         ctx.state = "identifier"
@@ -143,8 +143,8 @@ function* consume(prog: string) {
         continue
       }
 
-      // identifiers can contain [0-9a-zA-z_\-]
-      if (ctx.cur.length && /[0-9a-zA-z_\-]/.test(next)) {
+      // identifiers can contain [0-9a-zA-z_\-\.]
+      if (ctx.cur.length && /[0-9a-zA-z_\-\.]/.test(next)) {
         logger.trace("encountered valid initial character")
 
         ctx.cur += next
@@ -191,7 +191,7 @@ function* consume(prog: string) {
 
 export function lex(prog: string): Token[] {
   const logger = _logger.child({ package: "shorthand", "component": "lexer", method: "~lex" })
-  logger.trace("tokenizing")
+  logger.trace({ prog }, "tokenizing")
 
   const tokens: Token[] = []
   for (const token of consume(prog)) {

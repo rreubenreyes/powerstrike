@@ -4,10 +4,35 @@ import _logger from "./util/logger"
 import * as errors from "./errors"
 import * as program from "./program"
 import * as reflect from "./util/reflect"
-import * as shorthand from "./shorthand"
 import * as yamlUtils from "./yaml"
 
 let allowImplicitShorthand = true
+
+function isStatementValue(value: unknown): value is program.Statement["value"] {
+  return typeof value === "string" || typeof value === "number"
+}
+
+function parseStatement(value: unknown): program.Statement {
+  const logger = _logger.child({ method: "#parseStatement" })
+
+  if (typeof value === "string") {
+    return {
+      kind: "shorthand",
+      value,
+    }
+  }
+  if (typeof value === "number") {
+    return {
+      kind: "literal",
+      value,
+    }
+  }
+
+  const err = new errors.InvalidProgramError("invalid statement")
+  logger.error({ err }, err.message)
+
+  throw err
+}
 
 function parseDefaults(record: unknown): program.Defaults {
   const logger = _logger.child({ method: "#parseDefaults" })
@@ -75,30 +100,55 @@ function parseDefaults(record: unknown): program.Defaults {
   return dd
 }
 
-function parseDeclaredExercise(record: unknown): program.DeclaredExercise {
+function parseDeclaredExercise(exercise: unknown): program.DeclaredExercise {
   const logger = _logger.child({ method: "#parseDeclaredExercise" })
 
-  if (!reflect.isRecord(record)) {
+  if (!reflect.isRecord(exercise)) {
     const err = new errors.InvalidProgramError("invalid exercises - expected list<map>")
     logger.error({ err }, err.message)
 
     throw err
   }
 
-  if (typeof record.name !== "string") {
+  const {
+    name: exerciseName,
+    alias: exerciseAlias,
+    renders_as: exerciseRendersAs,
+    ...exerciseProps
+  } = exercise
+
+  if (typeof exerciseName !== "string") {
     const err = new errors.InvalidProgramError("invalid exercises[]:name - expected string")
     logger.error({ err }, err.message)
 
     throw err
   }
 
-  const alias = typeof record["renders as"] === "string"
-    ? record["renders as"]
-    : typeof record.alias === "string" ? record.alias : undefined
+  const alias = typeof exerciseRendersAs === "string"
+    ? exerciseRendersAs
+    : typeof exerciseAlias === "string" ? exerciseAlias : undefined
+
+  const properties = Object.entries(exerciseProps).reduce<program.DeclaredExercise["properties"]>((obj, [k, v]) => {
+    logger.trace({ k, v }, "parsing property")
+    if (typeof v === "number") {
+      obj[k] = {
+        kind: "literal",
+        value: v
+      }
+
+      return obj
+    }
+
+    const err = new errors.InvalidProgramError("invalid exercises[] - properties must be number")
+    logger.error({ err }, err.message)
+
+    throw err
+  }, {})
 
   return {
-    name: record.name,
-    alias: alias || record.name,
+    name: exerciseName,
+    alias: alias || exerciseName,
+    properties,
   }
 }
 
@@ -118,6 +168,7 @@ function parseDeclaredExercises(arr: unknown = []) {
 function parseTemplatedExercise(input: unknown): program.TemplatedExercise {
   const logger = _logger.child({ method: "#parseTemplatedExercise" })
 
+  logger.trace({ input }, "parsing templated exercise")
   if (!reflect.isRecord(input)) {
     const err = new errors.InvalidProgramError("invalid exercises - expected list<map>")
     logger.error({ err }, err.message)
@@ -125,32 +176,39 @@ function parseTemplatedExercise(input: unknown): program.TemplatedExercise {
     throw err
   }
 
-  if (typeof input.name !== "string") {
-    const err = new errors.InvalidProgramError("invalid exercises[]:name - expected string")
+  const [[name, definition]] = Object.entries(input)
+  if (typeof name !== "string") {
+    const err = new errors.InvalidProgramError("invalid exercises[] - expected list<map<string, map>>")
     logger.error({ err }, err.message)
 
     throw err
   }
 
+  logger.trace({ exercise: { name, definition } }, "exercise is valid record")
   let exercise: program.TemplatedExercise
-  if (reflect.isRecord(input)) {
+  if (reflect.isRecord(definition)) {
     // explicitly declared exercise
-    if (typeof input.weight === "number"
-        && typeof input.sets === "number"
-        && typeof input.reps == "number"
-        && (typeof input.rpe === "number" || input.rpe === undefined)) {
+    if (isStatementValue(definition.weight)
+        && isStatementValue(definition.sets)
+        && isStatementValue(definition.reps)
+        && (isStatementValue(definition.rpe) || typeof definition.rpe === "undefined")) {
       logger.trace({ input }, "exercise is explicitly declared")
       exercise = {
-        weight: input.weight,
-        sets: input.sets,
-        reps: input.reps,
-        rpe: input.rpe,
+        kind: "explicit",
+        name,
+        definition: {
+          weight: parseStatement(definition.weight),
+          sets: parseStatement(definition.sets),
+          reps: parseStatement(definition.reps),
+          rpe: definition.rpe ? parseStatement(definition.rpe) : undefined,
+        },
       }
-    } else if (input.kind === "shorthand" && typeof input.value === "string") {
+    } else if (definition.kind === "shorthand" && typeof definition.value === "string") {
       logger.trace({ input }, "exercise is explicit shorthand statement")
       exercise = {
         kind: "shorthand",
-        value: input.value,
+        name,
+        value: definition.value,
       }
     } else {
       const err = new errors.InvalidProgramError("invalid exercises[]")
@@ -158,11 +216,12 @@ function parseTemplatedExercise(input: unknown): program.TemplatedExercise {
 
       throw err
     }
-  } else if (typeof input === "string" && allowImplicitShorthand) {
+  } else if (typeof definition === "string" && allowImplicitShorthand) {
     logger.trace({ input }, "exercise might be implicit shorthand - will lazily evaluate")
     exercise = {
       kind: "shorthand",
-      value: input,
+      name,
+      value: definition,
     }
   } else {
     const err = new errors.InvalidProgramError("invalid exercises[]")
@@ -211,6 +270,7 @@ function parseSession(record: unknown): program.Session {
 
 function parseTemplate(record: unknown): program.Template {
   const logger = _logger.child({ method: "#parseTemplate" })
+  logger.trace({ record }, "parsing template")
 
   if (!reflect.isRecord(record)) {
     const err = new errors.InvalidProgramError("invalid exercises - expected list<map>")
@@ -226,6 +286,7 @@ function parseTemplate(record: unknown): program.Template {
     throw err
   }
 
+  logger.trace({ inputs: record.inputs }, "parsing inputs")
   if (!Array.isArray(record.inputs)) {
     const err = new errors.InvalidProgramError("invalid templates[]:inputs - expected list")
     logger.error({ err }, err.message)
@@ -233,7 +294,7 @@ function parseTemplate(record: unknown): program.Template {
     throw err
   }
 
-  if (!record.inputs.every((i) => typeof i !== "string")) {
+  if (!record.inputs.every((i) => typeof i === "string")) {
     const err = new errors.InvalidProgramError("invalid templates[]:inputs - expected list<string>")
     logger.error({ err }, err.message)
 
@@ -312,14 +373,28 @@ function parseBlock(input: unknown): program.Block {
         throw err
       }
       const [[name, value]] = Object.entries(i)
-      if (typeof value !== "number") {
-        const err = new errors.InvalidProgramError("invalid templates[]:inputs - expected list<map<string, number>>")
-        logger.error({ err }, err.message)
-
-        throw err
+      if (typeof value === "number") {
+        return {
+          name,
+          value: {
+            kind: "literal",
+            value
+          },
+        }
       }
+      if (typeof value === "string") {
+        return {
+          name,
+          value: {
+            kind: "shorthand",
+            value
+          },
+        }
+      }
+      const err = new errors.InvalidProgramError("invalid templates[]:inputs - expected list<map<string, number|string>>")
+      logger.error({ err }, err.message)
 
-      return { name, value }
+      throw err
     })
   }
 }
@@ -349,12 +424,23 @@ function parseSchedule(input: unknown) {
   }
 }
 
-function parse(input: string) {
-  const logger = _logger.child({ method: "#parse" })
+export function parse(input: string): {
+  defaults: program.Defaults
+  exercises: Record<string, program.DeclaredExercise>
+  templates: Record<string, program.Template>
+  schedule: program.Schedule
+} {
+  const logger = _logger.child({
+    package: "internal",
+    component: "parser",
+    method: "#parse"
+  })
+
   logger.trace("parsing program")
 
   logger.trace("loading yaml")
-  const p = yaml.load(input, { schema: yamlUtils.schema })
+  const p = yaml.load(input, { schema: yamlUtils.schema }) || {}
+  logger.trace(p, "loaded yaml")
 
   if (!reflect.isRecord(p)) {
     const err = new errors.InvalidProgramError("invalid program input")
@@ -368,37 +454,18 @@ function parse(input: string) {
 
   const exercises: program.DeclaredExercise[] = parseDeclaredExercises(p.exercises)
   const templates: program.Template[] = parseTemplates(p.templates)
-  const schedule: program.Schedule = parseSchedule(p.schedule)
-
-  // TODO: resolve these three blocks
+  const schedule: program.Schedule = parseSchedule(p.schedule || { blocks: [] })
 
   return {
     defaults,
-    exercises,
-    templates,
+    exercises: exercises.reduce<Record<string, program.DeclaredExercise>>((obj, e) => {
+      obj[e.name] = e
+      return obj
+    }, {}),
+    templates: templates.reduce<Record<string, program.Template>>((obj, t) => {
+      obj[t.name] = t
+      return obj
+    }, {}),
     schedule,
   }
 }
-
-// function renderBlock(
-//   input: { inputs: string[], templates: string[] },
-//   templates: { sessions: Template[], exercises: TemplatedExercise[] },
-//   block: program.Block,
-// ) {
-//   const logger = _logger.child({ method: "#renderBlock" })
-
-//   const template =
-
-//   return {
-//     name: block.name,
-//   }
-// }
-
-// function render(input: string): program.RenderedProgram {
-//   const logger = _logger.child({ method: "~render" })
-//   logger.trace("rendering program")
-
-//   const parsed = parse(input)
-
-//   // resolve exercise names
-// }
